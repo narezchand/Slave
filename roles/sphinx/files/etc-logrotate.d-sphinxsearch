@@ -1,0 +1,10 @@
+/var/log/sphinxsearch/*.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    sharedscripts
+    postrotate
+        /usr/bin/supervisorctl restart sphinxsearch:*
+    endscript
+}

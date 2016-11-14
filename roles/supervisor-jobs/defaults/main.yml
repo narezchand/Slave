@@ -1,0 +1,28 @@
+---
+# defaults vars - can apply to any OS
+
+## an array containing hashes for specific supervisor jobs to create
+supervisorJobs: []
+## example:
+#  -
+#    name: resque-alpha
+#    directory: /var/www/main/htdocs
+#    environment: "QUEUE='alpha',HOST='alpha.com'"
+#    command: "php ./current/resque.php"
+#    numProcs: 1
+#  -
+#    name: resque-bravo
+#    directory: /var/www/main/htdocs
+#    environment: "QUEUE='bravo',HOST='bravo.com'"
+#    command: "php ./current/resque.php"
+#    numProcs: 1
+
+## an array of groups for logically grouping supervisor instances
+## by project allowing restart with supervisorctl restart "theapp:*"
+supervisorGroups: []
+## example:
+#  -
+#    name: theapp
+#    programs:
+#      - resque-alpha
+#      - resque-bravo

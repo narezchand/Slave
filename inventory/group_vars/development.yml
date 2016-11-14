@@ -1,0 +1,148 @@
+---
+##
+# set the stage
+#
+stage: development
+
+##
+# allow connections to any port from host machine
+#
+setupFirewallWhitelist:
+  -
+    src: 192.168.33.1
+    proto: any
+
+##
+# send rsyslog entries to mac os x host machine
+#
+setupRsyslogDestination: |
+    # forward to mac os x host machine
+    *.*     @10.0.2.2:514
+
+##
+# don't enable zsh for root user
+#
+setupRootUserZSH: false
+
+##
+# add cron job to call wp-cron
+#
+setupCronJobs:
+  -
+    day: "*"
+    hour: "*"
+    job: "/usr/bin/flock -n /tmp/.wp-cron-lock /opt/tools/wordpress/wp-cron > /dev/null 2>&1"
+    minute: "*/2"
+    month: "*"
+    name: "wordpress: wp-cron"
+    state: present
+    user: root
+    weekday: "*"
+
+##
+# used in /etc/hosts
+#
+setupLANEtcHosts:
+  -
+    fqdn: development.voceplatforms.com
+    short: development
+    address: 192.168.33.10
+
+##
+# mysql packages to install
+#
+mysqlPackages:
+  - mariadb-server-5.5
+
+##
+# which mysql tool packages to install
+#
+mysqlToolPackages:
+  - libmariadbclient-dev
+  - python-mysqldb
+  - mytop
+  - mysqltuner
+
+##
+# use the development SQL configuration
+#
+mysqlConfiguration: development
+
+##
+# which php modules to enable for cli
+#
+phpCLIModsEnabled:
+  -
+    mod: mysqlnd
+    priority: "10"
+  -
+    mod: pdo
+    priority: "10"
+  -
+    mod: curl
+  -
+    mod: gd
+  -
+    mod: mcrypt
+  -
+    mod: memcached
+  -
+    mod: mysqli
+  -
+    mod: mysql
+  -
+    mod: pdo_mysql
+  -
+    mod: readline
+  -
+    mod: xdebug
+
+##
+# which modules should be disabled for PHP (cli)
+#
+phpCLIModsDisabled:
+  -
+    mod: opcache
+    priority: "05"
+
+##
+# which modules should be enabled for PHP (fpm)
+#
+phpFPMModsEnabled:
+  -
+    mod: opcache
+    priority: "05"
+  -
+    mod: mysqlnd
+    priority: "10"
+  -
+    mod: pdo
+    priority: "10"
+  -
+    mod: curl
+  -
+    mod: gd
+  -
+    mod: mcrypt
+  -
+    mod: memcached
+  -
+    mod: mysqli
+  -
+    mod: mysql
+  -
+    mod: pdo_mysql
+  -
+    mod: xdebug
+
+##
+# which modules should be disabled for PHP (fpm)
+#
+phpFPMModsDisabled:
+  -
+    mod: readline
+
+##
+# multiple roles use nginxListenPort
+#
+nginxListenPort: 80

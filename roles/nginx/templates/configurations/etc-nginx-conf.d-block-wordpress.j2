@@ -1,0 +1,15 @@
+  location @wordpress {
+    ## include cache configuration
+    include /etc/nginx/conf.d/caching-fastcgi;
+
+    # set ENV vars for PHP
+    include         /etc/nginx/fastcgi_params;
+    fastcgi_param   SCRIPT_FILENAME     $document_root/index.php;
+    fastcgi_param   SCRIPT_NAME         /index.php;
+    fastcgi_param   SERVER_PORT         $http_x_forwarded_port;
+    fastcgi_param   HTTPS               $https_forwarded if_not_empty;
+
+    # send to PHP-FPM
+    fastcgi_pass    unix:/var/www/$_application/tmp/php5-fpm.sock;
+    break;
+  }

@@ -1,0 +1,116 @@
+---
+- name: check if wp-cli installed
+  shell: >
+    command -v wp > /dev/null 2>&1
+  register: wpInstalled
+  ignore_errors: True
+  changed_when: False
+
+- name: retrieve wp-cli installer
+  get_url: >
+    url=https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    dest=/usr/local/bin/wp
+    owner=root group=root mode=0755
+  when: wpInstalled.rc != 0
+
+- name: ensure directory /var/www/client/htdocs/shared/wp-content
+  file: >
+    path=/var/www/{{ item.name }}/htdocs/shared/wp-content state=directory
+    owner=www-data group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress"
+  tags:
+    - client:provision
+
+- name: ensure directory /var/www/client/htdocs/shared/wp-content/uploads
+  file: >
+    path=/var/www/{{ item.name }}/htdocs/shared/wp-content/uploads state=directory
+    owner=www-data group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress" and
+    not wordpressGlusterFS
+  tags:
+    - client:provision
+
+- name: ensure symlink for uploads to glusterfs storage
+  file: >
+    src=/storage/{{ item.name }}/uploads
+    dest=/var/www/{{ item.name }}/htdocs/shared/wp-content/uploads
+    owner=robot group=users state=link
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress" and
+    wordpressGlusterFS
+  tags:
+    - client:provision
+
+- name: add application wp-config.php file
+  template: >
+    src=wp-config.php.j2
+    dest=/var/www/{{ item.name }}/htdocs/shared/wp-config.php
+    owner=robot group=users mode=0664
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress"
+  tags:
+    - client:provision
+
+- name: retrieve secret key values for use in wp-config.php
+  get_url: >
+    url=https://api.wordpress.org/secret-key/1.1/salt
+    dest=/var/www/{{ item.name }}/htdocs/shared/wp-content/uploads/.wp.keys
+    owner=root group=sudo mode=0440
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress" and
+    wordpressSecretKeys
+  tags:
+    - client:provision
+
+- name: add application db-config.php file
+  template: >
+    src=db-config.php.j2
+    dest=/var/www/{{ item.name }}/htdocs/shared/db-config.php
+    owner=robot group=users mode=0664
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress" and
+    item.instance.wpHyperDB|default(false)
+  tags:
+    - client:provision
+
+- name: create /opt/tools/wordpress support directory
+  file: >
+    path=/opt/tools/wordpress state=directory
+    owner=root group=root mode=0755
+
+- name: copy scripts to /opt/tools/wordpress
+  copy: >
+    src=opt-tools-wordpress-{{ item }}
+    dest=/opt/tools/wordpress/{{ item }}
+    owner=root group=sudo mode=0550
+  with_items:
+    - fix-permissions
+    - silence.php
+    - wp-cron
+    - wp-secret-key-replace
+
+- name: execute fix permissions script in /opt/tools/wordpress
+  shell: >
+    chdir=/opt/tools/wordpress
+    ./fix-permissions {{ item.name }}
+  with_items: applications
+  when: >
+    executeFixPermissions and
+    item.instance and
+    item.type == "wordpress"
+  tags:
+    - client:provision

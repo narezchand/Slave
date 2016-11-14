@@ -1,0 +1,13 @@
+  ## ssl settings
+  ssl_prefer_server_ciphers on;
+  ssl_ciphers               ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
+  ssl_protocols             TLSv1 TLSv1.1 TLSv1.2;
+
+  ## ssl stapling and session settings
+  ssl_session_timeout       10m;
+  ssl_session_cache         shared:SSL:10m;
+
+  ## TODO: ssl stapling
+  #ssl_stapling              on;
+  #ssl_stapling_verify       on;
+  #ssl_trusted_certificate   /etc/nginx/ssl/ca-certs.pem;

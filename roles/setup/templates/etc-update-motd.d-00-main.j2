@@ -1,0 +1,21 @@
+#!/bin/bash
+green='\e[0;32m'
+grey='\e[1;30m'
+nc='\e[0m'
+
+uptime=$(</proc/uptime)
+uptime=${uptime%%.*}
+
+seconds=$(( uptime%60 ))
+minutes=$(( uptime/60%60 ))
+hours=$(( uptime/60/60%24 ))
+days=$(( uptime/60/60/24 ))
+
+echo -e "${green}$(figlet -f slant '{{ setupMOTDLogo }}')
+
+              ${nc}welcome to $(hostname -f)!
+${grey}--------------------------------------------------------------------------${nc}
+                      Uptime: ${days}d ${hours}h ${minutes}m ${seconds}s
+                  IP Address: (eht0)   $(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+                              (eth1)   $(/sbin/ifconfig eth1 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+"

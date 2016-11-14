@@ -1,0 +1,59 @@
+---
+- name: install capistrano package requirements
+  apt: >
+    pkg={{ item }} state=installed update_cache=yes cache_valid_time=86400
+  with_items:
+    - libxslt1-dev
+  tags:
+    - push-deploy:capistrano
+
+- name: install gem dependencies
+  gem: >
+    name={{ item }} state=present user_install=no
+  with_items:
+    - bundler
+    - rake
+  tags:
+    - push-deploy:capistrano
+
+- name: clone capistrano-platforms into /opt/capistrano-platforms
+  git: >
+    accept_hostkey=True
+    repo=git@github.com:voceconnect/capistrano-platforms.git
+    dest=/opt/capistrano-platforms force=yes update=yes version=master
+  tags:
+    - push-deploy:capistrano
+
+- name: run bundle install on capistrano-platforms
+  shell: >
+    cd /opt/capistrano-platforms && /usr/local/bin/bundle install
+  tags:
+    - push-deploy:capistrano
+
+- name: build capistrano-platforms gem
+  shell: >
+    cd /opt/capistrano-platforms && /usr/local/bin/rake build
+  tags:
+    - push-deploy:capistrano
+
+- name: install capistrano-platforms gem
+  shell: >
+    cd /opt/capistrano-platforms && /usr/local/bin/rake install
+  tags:
+    - push-deploy:capistrano
+
+- name: add /home/git/.capfile
+  template: >
+    src=home-git-.capfile.j2
+    dest=/home/git/.capfile
+    owner=git group=git mode=0600
+  tags:
+    - push-deploy:capistrano
+
+- name: add /home/git/Capfile
+  copy: >
+    src=home-git-capfile
+    dest=/home/git/Capfile
+    owner=git group=git mode=0644
+  tags:
+    - push-deploy:capistrano

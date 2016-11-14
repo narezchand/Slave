@@ -1,0 +1,15 @@
+---
+# default vars - can apply to any OS
+
+# which nameservers to use to resolve hosts by default
+dnsmasqDefaultNameservers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+# domains that should be resolved through dnsmasq
+dnsmasqDomainsHosted: []
+# example:
+# - mysite.com
+
+# the ip of each internal domain, typically the load balancer ip
+dnsmasqLoadBalancerIP: 127.0.0.1

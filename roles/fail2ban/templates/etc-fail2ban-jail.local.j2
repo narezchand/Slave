@@ -1,0 +1,50 @@
+[DEFAULT]
+## override global settings
+ignoreip  = {% for _ip in fail2banWhitelist %} {{ _ip }}{% endfor %}
+
+bantime   = 10800 ;3 hours
+{% if fail2banEmailTo %}
+destemail = {{ fail2banEmailTo }}
+{% endif %}
+banaction = iptables-allports
+action    = %({{ fail2banAction }})s
+protocol  = all
+
+## required filters
+# ssh - 3 login failures in 60 seconds
+[sshd]
+enabled   = true
+maxretry  = 3
+findtime  = 60
+
+# ssh - failed to send password string 3 times in 60 seconds
+[sshd-ddos]
+enabled   = true
+maxretry  = 3
+findtime  = 60
+
+{% if fail2banFilters %}
+## host/group specific filters
+{{ fail2banFilters }}
+{% endif -%}
+
+## escalating repeat offender jail
+## if ip has been banned twice in one week, ban for one day
+## currently disabled due to performance issues
+[repeat-offender-level-1]
+enabled = false
+filter = repeat-offender
+bantime = 86400 ;1 day
+findtime = 604800 ;1 week
+logpath = /var/log/fail2ban.log
+maxretry = 2
+
+## if ip has been banned three times in one month, permanent ban
+## currently disabled due to performance issues
+[repeat-offender-level-2]
+enabled = false
+filter = repeat-offender
+bantime = -1 ;permanently
+findtime = 2592000 ;1 month
+logpath = /var/log/fail2ban.log
+maxretry = 3

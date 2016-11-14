@@ -1,0 +1,12 @@
+inventory/group_vars/linode-atl.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/linode-nj.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/linode.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/live.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/production.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/rackspace.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/rackspace-iad.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/staging.yml filter=git-crypt diff=git-crypt
+inventory/group_vars/uat.yml filter=git-crypt diff=git-crypt
+
+inventory/host_vars/*.rs.*.yml filter=git-crypt diff=git-crypt
+inventory/host_vars/*.lde.*.yml filter=git-crypt diff=git-crypt

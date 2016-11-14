@@ -1,0 +1,61 @@
+<?php
+
+$config['Database']['dbtype']                  = 'mysql';
+$config['Database']['dbname']                  = '{{ item.instance.database.name }}';
+$config['Database']['tableprefix']             = '';
+$config['Database']['technicalemail']          = '{{ vbulletinTechnicalEmail }}';
+$config['Database']['force_sql_mode']          = false;
+
+{% if stage == 'production' %}
+$config['MasterServer']['servername']          = '{{ vbulletinMasterHost }}';
+$config['MasterServer']['port']                = 3306;
+$config['MasterServer']['username']            = '{{ item.instance.database.username }}';
+$config['MasterServer']['password']            = '{{ item.instance.database.password }}';
+$config['MasterServer']['usepconnect']         = 0;
+
+$config['SlaveServer']['servername']           = '{{ vbulletinSlaveHost }}';
+$config['SlaveServer']['port']                 = 3306;
+$config['MasterServer']['username']            = '{{ item.instance.database.username }}';
+$config['MasterServer']['password']            = '{{ item.instance.database.password }}';
+$config['SlaveServer']['usepconnect']          = 0;
+
+{% for _memcached in vbulletinMemcachedServers %}
+$config['Misc']['memcacheserver'][{{ loop.index0 }}]          = '{{ _memcached.host }}';
+$config['Misc']['memcacheport'][{{ loop.index0 }}]            = {{ _memcached.port }};
+$config['Misc']['memcachepersistent'][{{ loop.index0 }}]      = true;
+$config['Misc']['memcacheweight'][{{ loop.index0 }}]          = 1;
+$config['Misc']['memcachetimeout'][{{ loop.index0 }}]         = 1;
+$config['Misc']['memcacheretry_interval'][{{ loop.index0 }}]  = 15;
+{% endfor %}
+
+{% else %}
+$config['MasterServer']['servername']          = 'localhost';
+$config['MasterServer']['port']                = 3306;
+$config['MasterServer']['username']            = '{{ item.instance.database.username|default('_root') }}';
+$config['MasterServer']['password']            = '{{ item.instance.database.password|default('spam32') }}';
+$config['MasterServer']['usepconnect']         = 0;
+
+$config['Datastore']['class']                  = 'vB_Datastore_Memcached';
+$config['Misc']['memcacheserver']              = 'localhost';
+$config['Misc']['memcacheport']                = 11211;
+$config['Misc']['memcachepersistent']          = true;
+$config['Misc']['memcacheweight']              = 1;
+$config['Misc']['memcachetimeout']             = 1;
+$config['Misc']['memcacheretry_interval']      = 15;
+
+{% endif %}
+
+$config['Misc']['admincpdir']                  = 'admincp';
+$config['Misc']['modcpdir']                    = 'modcp';
+$config['Misc']['cookieprefix']                = 'bb';
+$config['Misc']['forumpath']                   = '';
+$config['Misc']['maxwidth']                    = 2592;
+$config['Misc']['maxheight']                   = 1944;
+
+$config['SpecialUsers']['canviewadminlog']     = '1';
+$config['SpecialUsers']['canpruneadminlog']    = '1';
+$config['SpecialUsers']['canrunqueries']       = '';
+$config['SpecialUsers']['undeletableusers']    = '';
+$config['SpecialUsers']['superadministrators'] = '1';
+
+$config['Mysqli']['ini_file']                  = '';

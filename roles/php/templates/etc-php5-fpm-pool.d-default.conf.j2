@@ -1,0 +1,32 @@
+; {{ ansible_managed }}
+[default]
+
+prefix                                        = /var/www/common
+chdir                                         = /
+user                                          = www-data
+group                                         = www-data
+listen                                        = /tmp/php5-fpm.sock
+listen.owner                                  = www-data
+listen.group                                  = www-data
+listen.mode                                   = 0666
+
+pm                                            = dynamic
+pm.max_children                               = 5
+pm.start_servers                              = 2
+pm.min_spare_servers                          = 1
+pm.max_spare_servers                          = 3
+pm.max_requests                               = 100
+pm.status_path                                = /fpm/status
+
+ping.path                                     = /fpm/ping
+ping.response                                 = pong
+
+catch_workers_output                          = yes
+security.limit_extensions                     = .php
+
+env[HOSTNAME]                                 = {{ ansible_fqdn }}
+
+php_admin_flag[display_errors]                = off
+php_admin_flag[log_errors]                    = off
+php_admin_value[post_max_size]                = 25M
+php_admin_value[upload_max_filesize]          = 25M

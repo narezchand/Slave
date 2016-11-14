@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#
+# post-receive
+# executed after successful run of pre-receive hook...
+#
+
+exit 0

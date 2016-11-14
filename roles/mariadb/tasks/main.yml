@@ -1,0 +1,105 @@
+---
+- name: add mariadb mysql apt key
+  apt_key: >
+    url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xcbcb082a1bb943db state=present
+
+- name: add mariadb mysql package sources
+  apt_repository: >
+    repo='deb http://ftp.osuosl.org/pub/mariadb/repo/5.5/{{ ansible_distribution|lower }}  {{ ansible_distribution_release }} main' state=present
+
+# See: https://mariadb.com/kb/en/mariadb/installing-mariadb-deb-files/
+- name: package pin mariadb to only needed packages
+  copy: >
+    src=etc-apt-preferences.d-mariadb
+    dest=/etc/apt/preferences.d/mariadb
+    owner=root group=root mode=0644
+
+- name: install mysql packages
+  apt: >
+    pkg={{ item }} state=installed
+  with_items: mysqlPackages
+
+- name: add percona mysql apt key
+  apt_key: >
+    url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x1C4CBDCDCD2EFD2A state=present
+
+- name: add percona mysql package sources
+  apt_repository: >
+    repo='deb http://repo.percona.com/apt {{ ansible_distribution_release }} main' state=present
+
+- name: package pin percona to only needed packages
+  copy: >
+    src=etc-apt-preferences.d-percona
+    dest=/etc/apt/preferences.d/percona
+    owner=root group=root mode=0644
+
+- name: install support packages
+  apt: >
+    pkg={{ item }} state=installed
+  with_items: mysqlToolPackages
+
+- name: add /etc/mysql/my.cnf
+  template: >
+    src=etc-mysql-my.cnf.j2
+    dest=/etc/mysql/my.cnf
+    owner=root group=root mode=0644
+  notify:
+    - mysql iblogfile clear
+    - mysql restart
+
+- name: add /etc/mysql/conf.d directory
+  file: >
+    path=/etc/mysql/conf.d state=directory
+    owner=root group=root mode=0755
+
+- name: add /etc/mysql/conf.d/main.cnf
+  template: >
+    src=etc-mysql-conf.d-{{ mysqlConfiguration }}.cnf.j2
+    dest=/etc/mysql/conf.d/main.cnf
+    owner=root group=root mode=0644
+  notify:
+    - mysql iblogfile clear
+    - mysql restart
+
+- name: add /etc/rsyslog.d/20-mysql-error.conf
+  copy: >
+    src=etc-rsyslog.d-20-mysql-error.conf
+    dest=/etc/rsyslog.d/20-mysql-error.conf
+    owner=root group=root mode=0644
+  notify: rsyslog restart
+
+- name: add /etc/logrotate.d/mysql-server
+  copy: >
+    src=etc-logrotate.d-mysql-server
+    dest=/etc/logrotate.d/mysql-server
+    owner=root group=root mode=0644
+
+- name: remove extra /etc/mysql/conf.d configurtions
+  file: >
+    path=/etc/mysql/conf.d/{{ item }} state=absent
+  with_items:
+    - mariadb.cnf
+    - tokudb.cnf
+
+- name: ensure mysql owner on /var/lib/mysql
+  shell: >
+    chown -R mysql: /var/lib/mysql
+  changed_when: False
+
+- name: ensure mysql started
+  service: name=mysql state=started enabled=yes
+
+- include: secure-install.yml
+
+- name: add /etc/supervisor/conf.d/pt-kill.conf
+  copy: >
+    src=etc-supervisor-conf.d-pt-kill.conf
+    dest=/etc/supervisor/conf.d/pt-kill.conf
+    owner=root group=root mode=0644
+  when: mysqlKillLongRunningQueries
+  notify:
+    - pt-kill restart
+
+- name: ensure pt-kill running
+  supervisorctl: name=pt-kill state=started
+  when: mysqlKillLongRunningQueries

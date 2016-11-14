@@ -1,0 +1,10 @@
+## {{ ansible_managed }}
+
+## possibly logged in cookies
+map $http_cookie $logged_in {
+  default 0;
+
+{% for logged_in_cookie in nginxLoggedInCookies %}
+  ~*{{ logged_in_cookie }} 1;
+{% endfor %}
+}

@@ -1,0 +1,9 @@
+[program:sphinx-{{ item }}]
+user=root
+command=/usr/bin/searchd -c /etc/sphinxsearch/{{ item }}.conf --nodetach
+priority=999
+autostart=true
+startsecs=0
+autorestart=false
+stderr_logfile=/var/log/supervisor/{{ item }}.sphinxsearch.stderr.log
+stdout_logfile=/var/log/supervisor/{{ item }}.sphinxsearch.stdout.log

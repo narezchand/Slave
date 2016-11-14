@@ -1,0 +1,11 @@
+---
+# default vars - can apply to any OS
+
+# redis instances to setup, defaults to single instance on localhost port 6379
+redisInstances:
+  -
+    name: main
+    bind: 127.0.0.1
+    port: 6379
+    user: root
+    memory: 64mb

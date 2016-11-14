@@ -1,0 +1,26 @@
+---
+- name: add /etc/sudoers.tmp
+  template: >
+    src=etc-sudoers.j2
+    dest=/etc/sudoers.tmp
+    owner=root group=root mode=0440
+  notify:
+    - apply /etc/sudoers
+  tags:
+    - setup:sudo
+
+- name: add /etc/sudoers.d/sudo-group
+  copy: >
+    src=etc-sudoers.d-sudo-group
+    dest=/etc/sudoers.d/sudo-group
+    owner=root group=root mode=0440
+  tags:
+    - setup:sudo
+
+- name: add /etc/sudoers.d/ssh-auth-sock
+  copy: >
+    src=etc-sudoers.d-ssh-auth-sock
+    dest=/etc/sudoers.d/ssh-auth-sock
+    owner=root group=root mode=0440
+  tags:
+    - setup:sudo

@@ -1,0 +1,135 @@
+## {{ ansible_managed }}
+
+user                  www-data;
+
+error_log             /var/log/nginx/error.log info;
+pid                   /var/run/nginx.pid;
+
+worker_priority       -10;
+worker_processes      4;
+
+# each connection needs a file handle, 2 if proxying
+# should be greater than events->worker_connections
+worker_rlimit_nofile  16384;
+
+events {
+  # max clients = worker_connections * worker_processes
+  worker_connections  8192;
+  use epoll;
+  multi_accept on;
+}
+
+http {
+  ## hide NGINX version
+  server_tokens                 off;
+
+  ## MIME types
+  include           /etc/nginx/mime.types;
+  default_type      application/octet-stream;
+
+  ## logging
+  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+  log_format  piped '$http_host|$http_x_forwarded_for|'
+                    '$remote_addr|$remote_user|$time_local|$request|$status|'
+                    '$body_bytes_sent|$http_user_agent|$http_referer|'
+                    '$upstream_cache_status|$upstream_response_time|$request_time';
+  access_log off;
+
+  ## sendfile on to speed up I/O ops
+  sendfile                      on;
+
+  ## TCP options
+  tcp_nodelay                   on;
+  tcp_nopush                    on;
+
+  ## real IP
+  set_real_ip_from              127.0.0.1/32; # for proxied SSL
+{% for realIP in nginxSetRealIPAddresses if nginxSetRealIPAddresses is defined %}
+  set_real_ip_from              {{ realIP }};
+{% endfor %}
+  real_ip_header                X-Forwarded-For;
+  real_ip_recursive             on;
+
+  ## timeouts
+  client_header_timeout         10;
+  client_body_timeout           10;
+  keepalive_timeout             10;
+  send_timeout                  5;
+  reset_timedout_connection     on;
+
+  ## body size
+  client_max_body_size          25m;
+
+  ## if modified
+  if_modified_since             before;
+
+  ## compression
+  gzip                          on;
+  gzip_http_version             1.0;
+  gzip_comp_level               4;
+  gzip_min_length               256;
+  gzip_proxied                  expired no-cache no-store private auth;
+  gzip_buffers                  16 8k;
+  gzip_types                    text/css text/xml application/javascript application/atom+xml application/rss+xml application/json text/mathml text/plain application/x-font-otf application/x-font-ttf image/svg+xml;
+  gzip_disable                  "msie6";
+
+  ## hash sizes
+  map_hash_bucket_size          2048;
+  variables_hash_bucket_size    128;
+  variables_hash_max_size       1024;
+  server_names_hash_bucket_size 128;
+  server_names_hash_max_size    1024;
+  types_hash_max_size           2048;
+
+  ## proxy header settings
+  proxy_set_header              Host  $host;
+  proxy_set_header              X-Forwarded-For $remote_addr;
+  proxy_hide_header             X-Powered-By;
+
+  ## proxy settings
+  proxy_connect_timeout         5;
+  proxy_send_timeout            10;
+{% if stage != "production" %}
+  proxy_read_timeout            300;
+{% else %}
+  proxy_read_timeout            50;
+{% endif %}
+  proxy_buffering               off;
+
+  ## fastcgi settings
+  fastcgi_connect_timeout       5;
+  fastcgi_send_timeout          10;
+{% if stage != "production" %}
+  fastcgi_read_timeout          300;
+{% else %}
+  fastcgi_read_timeout          50;
+{% endif %}
+  fastcgi_buffer_size           128k;
+  fastcgi_buffers               4 256k;
+  fastcgi_busy_buffers_size     256k;
+  fastcgi_temp_file_write_size  256k;
+  fastcgi_intercept_errors      off;
+  fastcgi_hide_header           X-Powered-By;
+  include                       /etc/nginx/fastcgi_params;
+
+  ## map for allowed methods
+  map $request_method $not_allowed_method {
+    default 1;
+    GET 0;
+    HEAD 0;
+    POST 0;
+    PUT 0;
+    PATCH 0;
+    DELETE 0;
+    OPTIONS 0;
+  }
+
+  ## include all conf.d configs
+  include /etc/nginx/conf.d/*.conf;
+
+  ## include all virtualhosts
+  include /etc/nginx/sites-enabled/*.conf;
+}

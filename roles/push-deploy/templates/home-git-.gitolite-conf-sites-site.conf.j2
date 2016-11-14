@@ -1,0 +1,31 @@
+## {{ ansible_managed }}
+## configuration for {{ item.name }}
+
+{% for instance in item.instances|sort(attribute='name') if item.instances %}
+## {{ instance.name }}
+{% if instance.name == "production" %}
+repo production/{{ item.name }}
+    RW  = @production
+{% if not instance.servers %}
+    ## servers wasnt defined, create a build and
+    ## allow any user to push in order to create a build
+    RW  = @uat
+    RW  = @staging
+{% endif %}
+{% elif  instance.name == "staging" %}
+repo staging/{{ item.name }}
+    RW   = @production    # vv - if you can push to production, you can push to uat
+    RW+  = @uat           # vv - if you can push to uat, you can push to staging
+    RW+  = @staging
+{% elif instance.name == "uat" %}
+repo uat/{{ item.name }}
+    RW   = @production    # vv - if you can push to production, you can push to uat
+    RW+  = @uat
+{% elif instance.name == "development" %}
+    ## no configuration for local development
+{% else %}
+repo {{instance.name}}/{{item.name}}
+    RW = @production      # vv - default to production only for unknown instances
+{% endif %}
+
+{% endfor %}

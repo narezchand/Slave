@@ -1,0 +1,37 @@
+---
+- name: add application config.php file
+  template: >
+    src=vbulletin-config.php.j2
+    dest=/var/www/{{ item.name }}/htdocs/shared/config.php
+    owner=robot group=users mode=0664
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "vbulletin"
+  tags:
+    - client:provision
+
+- name: create /opt/tools/vbulletin support directory
+  file: >
+    path=/opt/tools/vbulletin state=directory
+    owner=root group=root mode=0755
+
+- name: copy fix permissions script to /opt/tools/vbulletin
+  copy: >
+    src=opt-tools-vbulletin-fix-permissions
+    dest=/opt/tools/vbulletin/fix-permissions
+    owner=root group=sudo mode=0770
+  tags:
+    - client:provision
+
+- name: execute fix permissions script in /opt/tools/vbulletin
+  shell: >
+    chdir=/opt/tools/vbulletin
+    ./fix-permissions {{ item.name }}
+  with_items: applications
+  when: >
+    executeFixPermissions and
+    item.instance and
+    item.type == "vbulletin"
+  tags:
+    - client:provision

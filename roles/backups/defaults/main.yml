@@ -1,0 +1,32 @@
+---
+# default vars - can apply to any OS
+
+# enable backups? best used in host_vars if specific hosts
+# need to execute backups
+backupsEnabled: false
+
+# set the access key for the s3 account to backup to
+backupsS3AccessKey: ""
+
+# set the secret key for the s3 account to backup to
+backupsS3SecretKey: ""
+
+# set the bucket name to backup into
+backupsS3Bucket: ""
+
+# set the paths the backup should include
+backupsIncludePaths: []
+# example
+#  - /var/www/*/htdocs
+#  - /var/www/common
+#  - /var/spool/holland
+
+backupsExcludePaths: []
+# example
+#  - /**.git*
+
+# send an email after backup executes?
+backupsSendEmail: false
+
+# which email to deliver to if backupsSendEmail is true
+backupsEmailTo: ""

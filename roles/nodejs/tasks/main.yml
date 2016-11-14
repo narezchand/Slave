@@ -1,0 +1,45 @@
+---
+- name: add /etc/supervisor/conf.d/nodejs-group.conf
+  template: >
+    src=etc-supervisor-conf.d-nodejs-group.conf.j2
+    dest=/etc/supervisor/conf.d/nodejs-group.conf
+    owner=root group=root mode=0644
+  notify: restart node instances
+  tags:
+    - client:provision
+
+- name: add /etc/supervisor/conf.d/ process config
+  template: >
+    src=supervisor-nodejs.conf.j2
+    dest=/etc/supervisor/conf.d/nodejs-{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: applications
+  when: item.instance and item.type in ['node']
+  notify: restart node instances
+  tags:
+    - client:provision
+
+- name: create /opt/tools/node support directory
+  file: >
+    path=/opt/tools/node state=directory
+    owner=root group=root mode=0755
+
+- name: copy fix permissions script to /opt/tools/node
+  copy: >
+    src=opt-tools-node-fix-permissions
+    dest=/opt/tools/node/fix-permissions
+    owner=root group=sudo mode=0770
+  tags:
+    - client:provision
+
+- name: execute fix permissions script in /opt/tools/node
+  shell: >
+    chdir=/opt/tools/node
+    ./fix-permissions {{ item.name }}
+  with_items: applications
+  when: >
+    executeFixPermissions and
+    item.instance and
+    item.type == "node"
+  tags:
+    - client:provision

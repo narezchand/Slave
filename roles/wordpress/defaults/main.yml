@@ -1,0 +1,34 @@
+---
+# default vars - can apply to any OS
+
+## database user that can read all databases to find
+## the wordpress applications. used for wp-cron requests
+wordpressDatabaseUser: "_root"
+
+## database password for above user
+wordpressDatabasePass: "spam32"
+
+## default configuration for hyperdb hosts - used to create
+## a db-config.php configuration for use with hyperdb
+wordpressHyperDBHosts:
+  -
+    host: 127.0.0.1
+    write: 1
+    read: 1
+    dataset: global
+    timeout: 0.2
+
+## do uploads/media lib for this host live on a glusterfs server?
+wordpressGlusterFS: false
+
+## by default, use this host to generate secret keys
+## in a multi-server setup, secret keys need to be the same,
+## but only one host needs to retrieve them for use by other
+## hosts. set to false on every host except 1 that will run
+## applications
+wordpressSecretKeys: true
+
+## which servers should wordpress use for memcached object caching?
+## defaults to a single instance on localhost
+wordpressMemcachedServers:
+  - 127.0.0.1:11211

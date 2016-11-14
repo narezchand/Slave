@@ -1,0 +1,19 @@
+## {{ ansible_managed }}
+
+## blocks by user agent
+map $http_user_agent $bad_bot {
+  default 0;
+
+{% for badBot in nginxBadBots %}
+  ~*{{ badBot }}    1;
+{% endfor %}
+}
+
+## blocks by referrer
+map $http_referer $bad_referer {
+  default 0;
+
+{% for badReferer in nginxBadReferers %}
+  ~*{{ badReferer }}    1;
+{% endfor %}
+}

@@ -1,0 +1,17 @@
+
+Host github.com
+  User git
+  HostName github.com
+  PreferredAuthentications publickey
+  Compression yes
+  StrictHostKeyChecking no
+  IdentityFile ~/.ssh/github.rsa
+
+
+Host bitbucket.org
+  User git
+  HostName bitbucket.org
+  PreferredAuthentications publickey
+  Compression yes
+  StrictHostKeyChecking no
+  IdentityFile ~/.ssh/bitbucket.rsa

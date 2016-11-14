@@ -1,0 +1,109 @@
+---
+- name: install php-fpm package
+  apt: >
+    pkg=php5-fpm state=installed
+  tags:
+    - php:fpm
+
+- name: ensure /etc/php/fpm/conf.d directory
+  file: >
+    path=/etc/php5/fpm/conf.d state=directory
+    owner=root group=root mode=0755
+
+- name: create /etc/php5/fpm/conf.d symlinks for enabled modules
+  file: >
+    src=/etc/php5/mods-available/{{ item.mod }}.ini
+    dest=/etc/php5/fpm/conf.d/{{ item.priority|default(20) }}-{{ item.mod }}.ini
+    owner=root group=root state=link
+  with_items: phpFPMModsEnabled
+  notify:
+    - php5-fpm reload
+  tags:
+    - php:fpm
+
+- name: remove /etc/php5/fpm/conf.d symlinks for disabled modules
+  file: >
+    path=/etc/php5/fpm/conf.d/{{ item.priority|default(20) }}-{{ item.mod }}.ini state=absent
+  with_items: phpFPMModsDisabled
+  notify:
+    - php5-fpm reload
+  tags:
+    - php:fpm
+
+- name: add /etc/php5/fpm/php-fpm.conf
+  copy: >
+    src=etc-php5-fpm-php-fpm.conf
+    dest=/etc/php5/fpm/php-fpm.conf
+    owner=root group=root mode=0644
+  notify: php5-fpm reload
+  tags:
+    - php:fpm
+
+- name: add /etc/php5/fpm/php.ini
+  template: >
+    src=etc-php5-fpm-php.ini.j2
+    dest=/etc/php5/fpm/php.ini
+    owner=root group=root mode=0644
+  notify: php5-fpm reload
+  tags:
+    - php:fpm
+
+- name: remove default provided www fpm pool
+  file: path=/etc/php5/fpm/pool.d/www.conf state=absent
+  tags:
+    - php:fpm
+
+- name: ensure directory /var/www
+  file: path=/var/www state=directory owner=root group=root mode=0755
+  tags:
+    - php:fpm
+
+- name: ensure directory /var/www/common
+  file: path=/var/www/common state=directory owner=www-data group=www-data mode=0755
+  tags:
+    - php:fpm
+
+- name: add /etc/php5/fpm/pool.d/default.conf
+  template: >
+    src=etc-php5-fpm-pool.d-default.conf.j2
+    dest=/etc/php5/fpm/pool.d/default.conf
+    owner=root group=root mode=0644
+  notify: php5-fpm reload
+  tags:
+    - php:fpm
+
+- name: add /etc/php5/fpm/pool.d configs
+  template: >
+    src=etc-php5-fpm-pool.d-{{ stage }}.conf.j2
+    dest=/etc/php5/fpm/pool.d/{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: applications
+  when: >
+    applications and
+    item.instance and
+    item.status == 'active' and
+    item.type in ['wordpress', 'vbulletin', 'php']
+  notify: php5-fpm reload
+  tags:
+    - client:provision
+    - php:fpm
+
+- name: remove /etc/php5/fpm/pool.d configs for inactive sites
+  file: >
+    path=/etc/php5/fpm/pool.d/{{ item.name }}.conf state=absent
+  with_items: applications
+  when: >
+    applications and
+    item.instance and
+    item.status in ['inactive', 'archived'] and
+    item.type in ['wordpress', 'vbulletin', 'php']
+  notify: php5-fpm reload
+  tags:
+    - client:provision
+    - php:fpm
+
+
+- name: ensure php5-fpm started
+  service: name=php5-fpm state=started enabled=yes
+  tags:
+    - php:fpm

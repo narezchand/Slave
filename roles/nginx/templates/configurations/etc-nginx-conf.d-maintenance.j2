@@ -1,0 +1,23 @@
+  ## if maintenance page is present, set maintenance to 1
+  set $maintenance 0;
+  if (-f /var/www/$_application/htdocs/maintenance.html) {
+    set $maintenance 1;
+  }
+
+  ## if the source ip is allowed, set maintenance to 0
+  if ($allowed_during_maintenance) {
+    set $maintenance 0;
+  }
+
+  ## if maintenance is still 1, return a 503 by mapping to an internal location
+  ## block that only serves the maintenance page
+  if ($maintenance) {
+    return 503;
+  }
+
+  error_page 503 @maintenance;
+  location @maintenance {
+    root     /var/www/$_application/htdocs;
+    rewrite  ^(.*)$  /maintenance.html;
+    break;
+  }

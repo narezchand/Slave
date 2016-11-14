@@ -1,0 +1,45 @@
+---
+# default vars - can apply to any OS
+
+## an array of user data that should match the 'setupUsers' var
+## from the required 'setup' role
+pushDeployUsers: []
+
+## specify permissions as an array of usernames that exist within
+## the main setupUsers variable. permissions 'cascade' - e.g. a user
+## that can push to production can also push to uat and staging. a user
+## that can push to uat can also push to staging.
+pushDeployAdmins: []
+pushDeployProduction: []
+pushDeployStaging: []
+pushDeployUAT: []
+
+## private ssh keys used to connect to both github and other hosts
+pushDeploySSHGitHubRSA: ""
+pushDeploySSHRobotRSA: ""
+
+## if creating 'builds' of projects, specify s3 information to where
+## the builds should be placed (will be organized by project), as
+## well as the credentials to access the specified bucket name
+pushDeployBuildS3Bucket: ""
+pushDeployBuildS3AccessKey: ""
+pushDeployBuildS3SecretKey: ""
+
+## if projects are integrated with NetDNA CDN pull zones and project
+## instance data contains cdnZoneIDs, use the following information
+## to send a 'purge all' request to the specified account with
+## specified oauth consumer key and secret
+pushDeployNetDNACompanyAlias: ""
+pushDeployNetDNAConsumerKey: ""
+pushDeployNetDNAConsumerSecret: ""
+
+## if push deploy will be making deployments to pantheon, login
+## information must be provided to allow the robot user to make 
+## those changes.
+pushDeployPantheonUser: ""
+pushDeployPantheonPassword: ""
+
+
+## if deployments need to send a notification into the 'slack'
+## chat app, specify the web hook here
+pushDeploySlackWebhookURL: ""

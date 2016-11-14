@@ -1,0 +1,9 @@
+# pin all packages from dotdeb to a lower priority...
+Package: *
+Pin: release n=wheezy
+Pin-Priority: 400
+
+# ...except redis-server package
+Package: redis-server
+Pin: release n=wheezy
+Pin-Priority: 600

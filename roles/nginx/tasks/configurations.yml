@@ -1,0 +1,69 @@
+---
+- name: add /etc/nginx/conf.d global configurations
+  template: >
+    src=configurations/etc-nginx-conf.d-{{ item }}.j2
+    dest=/etc/nginx/conf.d/{{ item }}
+    owner=root group=root mode=0644
+  with_items:
+    - cache-paths.conf
+    - geo-allowed-during-maintenance.conf
+    - geo-netdna-ip-ranges.conf
+    - geo-wp-cron.conf
+    - limit-zones.conf
+    - map-bot-and-referrer-blacklists.conf
+    - map-https-forwarded.conf
+    - map-logged-in-cookies.conf
+    - map-normalized-useragent.conf
+    - upstreams.conf
+  notify: nginx reload
+  tags:
+    - nginx:configurations
+
+- name: add /etc/nginx/conf.d conditional configurations
+  template: >
+    src=configurations/etc-nginx-conf.d-{{ item }}.j2
+    dest=/etc/nginx/conf.d/{{ item }}
+    owner=root group=root mode=0644
+  with_items:
+    - block-empty
+    - block-php
+    - block-vbulletin
+    - block-wordpress
+    - caching-fastcgi
+    - caching-proxy
+    - error-pages
+    - favicon
+    - fpm-ping-status
+    - limits
+    - maintenance
+    - open-file-caching
+    - password-protect
+    - rejected-requests
+    - robots-txt-cdn
+    - robots-txt
+    - ssl
+    - wp-cron
+    - wp-deny
+    - wp-feeds
+    - wp-lb-feeds
+  notify: nginx reload
+  tags:
+    - nginx:configurations
+
+- name: add /etc/nginx/sites-available/default.conf
+  template: >
+    src=applications/default-{{ nginxConfiguration }}.conf.j2
+    dest=/etc/nginx/sites-available/default.conf
+    owner=root group=root mode=0644
+  notify: nginx reload
+  tags:
+    - nginx:configurations
+
+- name: symlink default site in sites-enabled
+  file: >
+    src=/etc/nginx/sites-available/default.conf
+    dest=/etc/nginx/sites-enabled/default.conf
+    owner=root group=root state=link
+  notify: nginx reload
+  tags:
+    - nginx:configurations

@@ -1,0 +1,21 @@
+<?php
+/* {{ ansible_managed }} */
+
+$wpdb->save_queries = false;
+$wpdb->persistent = false;
+$wpdb->max_connections = 50;
+$wpdb->check_tcp_responsiveness = true;
+
+{% for _host in wordpressHyperDBHosts %}
+$wpdb->add_database(array(
+  'host'     => '{{ _host.host }}',
+  'user'     => DB_USER,
+  'password' => DB_PASSWORD,
+  'name'     => DB_NAME,
+  'write'    => {{ _host.write }},
+  'read'     => {{ _host.read }},
+  'dataset'  => '{{ _host.dataset }}',
+  'timeout'  => {{ _host.timeout }},
+));
+
+{% endfor %}

@@ -1,0 +1,15 @@
+---
+- name: mysql update-rc.d
+  shell: update-rc.d mysql defaults
+
+- name: mysql iblogfile clear
+  shell: rm -f /var/lib/mysql/ib_logfile*
+
+- name: mysql restart
+  service: name=mysql state=restarted
+
+- name: rsyslog restart
+  service: name=rsyslog state=restarted
+
+- name: pt-kill restart
+  supervisorctl: name=pt-kill state=restarted

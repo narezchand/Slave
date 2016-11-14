@@ -1,0 +1,14 @@
+---
+# default vars - can apply to any OS
+
+# how much memory memcached can use (in MB)
+memcachedMemoryLimit: 128
+
+# the user the memcached daemon should run as
+memcachedUser: nobody
+
+# what port memcached should bind to
+memcachedListenPort: 11211
+
+# limit the number of simultaneous connections to memcached
+memcachedConnections: 8192

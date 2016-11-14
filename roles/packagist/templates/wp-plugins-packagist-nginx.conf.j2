@@ -1,0 +1,102 @@
+## BEGIN server
+server {
+  set $_application "wp-plugins-packagist";
+  set $_output_cache 1;
+
+  listen {{ nginxListenPort }};
+  server_name {{ packagistPluginsDomainName }};
+
+  ## set document root and index types
+  root /var/www/wp-plugins-packagist/htdocs/current/web;
+  index index.html index.htm;
+
+  ## logs
+  access_log /var/log/nginx/wp-plugins-packagist/access.log piped;
+  error_log /var/log/nginx/wp-plugins-packagist/error.log;
+
+  ## debug log
+  ## uncomment the below and comment out the above error_log for debugging
+  # error_log /var/log/nginx/wp-plugins-packagist/debug.log debug;
+
+  ## error page settings
+  include /etc/nginx/conf.d/error-pages;
+
+  ## favicon - try for file or send empty_gif
+  include /etc/nginx/conf.d/favicon;
+
+  ## static assets on disk
+  location ~* ^.+\.(?:{{ nginxStaticExtensions }})$ {
+    if_modified_since   before;
+    try_files           $uri =404;
+  }
+
+  ## main location
+  location / {
+    try_files $uri $uri/ /index.html =404;
+  }
+
+  ## named location blocks
+  include /etc/nginx/conf.d/block-empty;
+}
+## END server
+
+## BEGIN server
+server {
+  set $_application "wp-plugins-packagist";
+  set $_output_cache 1;
+
+  listen 443 ssl spdy;
+  server_name {{ packagistPluginsDomainName }};
+
+  ## set document root and index types
+  root /var/www/wp-plugins-packagist/htdocs/current/web;
+  index index.html index.htm;
+
+  ## logs
+  access_log /var/log/nginx/wp-plugins-packagist/access.log piped;
+  error_log /var/log/nginx/wp-plugins-packagist/error.log;
+
+  ## debug log
+  ## uncomment the below and comment out the above error_log for debugging
+  # error_log /var/log/nginx/wp-plugins-packagist/debug.log debug;
+
+  ## if forwarded proto not set, set to https
+  if ($http_x_forwarded_proto = '') {
+    set $http_x_forwarded_proto 'https';
+  }
+
+  ## ssl settings
+  ssl_certificate           /etc/nginx/ssl/star.voceconnect.com.crt;
+  ssl_certificate_key       /etc/nginx/ssl/star.voceconnect.com.key;
+  include                   /etc/nginx/conf.d/ssl;
+
+  ## error page settings
+  include /etc/nginx/conf.d/error-pages;
+
+  ## favicon - try for file or send empty_gif
+  include /etc/nginx/conf.d/favicon;
+
+  ## static assets on disk
+  location ~* ^.+\.(?:{{ nginxStaticExtensions }})$ {
+    if_modified_since   before;
+    try_files           $uri =404;
+  }
+
+  ## main location
+  location / {
+    try_files $uri $uri/ /index.html =404;
+  }
+
+  ## named location blocks
+  include /etc/nginx/conf.d/block-empty;
+}
+## END server
+
+## BEGIN SSL map
+map $host$uri $projects_api_prefer_proto {
+  default "http";
+
+  ## additional hosts and uris to force ssl on
+  ~*(.+)  "https";
+}
+## END SSL map

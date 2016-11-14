@@ -1,0 +1,30 @@
+# {{ ansible_managed }}
+smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+biff = no
+readme_directory = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+myhostname = {{ ansible_fqdn }}
+myorigin = {{ ansible_fqdn }}
+#local_transport = error:local deliver is disabled
+#unknown_local_recipient_reject_code = 550
+
+mailbox_size_limit = 0
+recipient_delimiter = +
+
+inet_interfaces = all
+inet_protocols = all
+
+header_size_limit = 4096000
+
+alias_maps = hash:/etc/aliases
+canonical_maps = hash:/etc/postfix/canonical
+
+{% if postfixSettings is defined %}
+{% for key, value in postfixSettings.iteritems() %}
+{% if value is defined %}{{ key }} = {{ value }}{% endif %}
+
+{% endfor %}
+{% endif %}

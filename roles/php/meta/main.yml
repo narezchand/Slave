@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: Sean O'Shaughnessy
+  description: Setup and configuration of PHP and related components
+  license: MIT
+  min_ansible_version: 1.2
+  platforms:
+    - name: Ubuntu
+      versions:
+        - precise
+    - name: Debian
+      versions:
+        - wheezy
+  categories:
+    - system

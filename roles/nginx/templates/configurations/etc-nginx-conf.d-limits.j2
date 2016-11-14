@@ -1,0 +1,5 @@
+## TODO: uncomment when domains are pointed directly to new cluster
+## off because all connections appear to come from one IP address - the
+## old linode server proxy forwarding for sites
+#  limit_conn  connection_limit   30;
+#  limit_req   zone=request_limit burst=20 nodelay;

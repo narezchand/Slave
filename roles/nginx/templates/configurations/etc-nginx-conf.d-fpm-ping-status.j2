@@ -1,0 +1,10 @@
+  ## don't allow fpm ping/status to backend unless from localhost
+  location ~ ^/fpm/(ping|status)$ {
+    allow          127.0.0.1;
+    deny           all;
+
+    include        /etc/nginx/fastcgi_params;
+    fastcgi_param  SCRIPT_FILENAME $fastcgi_script_name;
+    fastcgi_pass   unix:/var/www/$_application/tmp/php5-fpm.sock;
+    break;
+  }

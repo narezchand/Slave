@@ -1,0 +1,94 @@
+---
+- name: install ansible package requirements
+  apt: >
+    pkg={{ item }} state=installed update_cache=yes cache_valid_time=86400
+  with_items:
+    - python-dev
+    - python-paramiko
+    - python-passlib
+    - python-yaml
+    - python-pip
+  tags:
+    - setup:ansible
+
+- name: pip upgrade distribute (fixes pip list bug)
+  shell: >
+    pip install -U distribute
+  register: distributeUpgrade
+  changed_when: >
+    'Requirement already up-to-date' not in distributeUpgrade.stdout
+  tags:
+    - setup:ansible
+
+- name: install pip packages
+  shell: >
+    pip install Jinja2
+  register: pipInstallPackages
+  changed_when: >
+    'Requirement already satisfied' not in pipInstallPackages.stdout
+  tags:
+    - setup:ansible
+
+- name: add /etc/profile.d/ansible.sh
+  copy: >
+    src=etc-profile.d-ansible.sh
+    dest=/etc/profile.d/ansible.sh
+    owner=root group=root mode=0644
+  tags:
+    - setup:ansible
+
+- name: check if git-crypt installed
+  shell: >
+    command -v git-crypt > /dev/null 2>&1
+  register: gitCryptInstalled
+  changed_when: False
+  ignore_errors: True
+  tags:
+    - setup:ansible
+
+- name: clone git-crypt.git into /usr/local/src/git-crypt
+  git: >
+    repo=https://github.com/AGWA/git-crypt.git
+    dest=/usr/local/src/git-crypt force=yes
+  when: gitCryptInstalled.rc != 0
+  tags:
+    - setup:ansible
+
+- name: make git-crypt
+  shell: >
+    chdir=/usr/local/src/git-crypt make -j4
+  when: gitCryptInstalled.rc != 0
+  tags:
+    - setup:ansible
+
+- name: copy git-crypt to /usr/local/bin
+  shell: >
+    chdir=/usr/local/src/git-crypt
+    cp git-crypt /usr/local/bin
+  when: gitCryptInstalled.rc != 0
+  tags:
+    - setup:ansible
+
+- name: ensure executable git-crypt
+  file: >
+    path=/usr/local/bin/git-crypt
+    owner=root group=root mode=0775
+  tags:
+    - setup:ansible
+
+- name: clone ansible.git into /opt/ansible
+  git: >
+    accept_hostkey=True
+    repo={{ setupAnsibleRepoURL }}
+    dest=/opt/ansible
+  when: >
+    setupAnsibleCloneOnNode
+  tags:
+    - setup:ansible
+
+- name: lock down permissions on /opt/ansible
+  file: path=/opt/ansible state=directory owner=root group=root mode=0750
+  when: >
+    setupAnsibleCloneOnNode
+  tags:
+    - setup:ansible

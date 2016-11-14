@@ -1,0 +1,6 @@
+---
+- name: restart supervisor instances
+  supervisorctl: >
+    name={{ item.name }} state=restarted
+  with_items: supervisorJobs
+  ignore_errors: True

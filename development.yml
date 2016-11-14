@@ -1,0 +1,106 @@
+---
+- name: development environment setup...
+  hosts: all
+  sudo: True
+  roles:
+    - { role: 'setup', tags: [ 'setup' ] }
+
+- name: provision common server requirements...
+  hosts: all
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - dnsmasq
+  roles:
+    - { role: 'dnsmasq', tags: [ 'dnsmasq' ] }
+
+- name: provision database servers...
+  hosts: database
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - mysql-apps-users
+  roles:
+    - { role: 'mariadb', tags: [ 'mariadb' ] }
+    - { role: 'mysql-apps-users', tags: [ 'mysql-apps-users' ] }
+
+- name: provision memcached servers...
+  hosts: memcached
+  sudo: True
+  roles:
+    - { role: 'memcached', tags: [ 'memcached' ] }
+
+- name: provision redis servers...
+  hosts: redis
+  sudo: True
+  roles:
+    - { role: 'redis', tags: [ 'redis' ] }
+
+- name: provision nginx servers...
+  hosts: nginx
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - nginx:applications
+        - nginx
+  roles:
+    - { role: 'nginx', tags: [ 'nginx' ] }
+
+- name: provision web servers...
+  hosts: web
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - php
+        - php:fpm
+        - wordpress
+        - static
+        - nodejs
+        - vbulletin
+  roles:
+    - { role: 'php', tags: [ 'php' ] }
+    - { role: 'wordpress', tags: [ 'wordpress' ] }
+    - { role: 'static', tags: [ 'static' ] }
+    - { role: 'nodejs', tags: [ 'nodejs' ] }
+    - { role: 'vbulletin', tags: [ 'vbulletin' ] }
+    - { role: 'webgrind', tags: [ 'webgrind' ] }
+
+- name: provision supervisord configurations...
+  hosts: supervisor_jobs
+  sudo: True
+  roles:
+    - { role: 'supervisor-jobs', tags: [ 'supervisor-jobs' ] }
+
+- name: development environmnet specific tasks...
+  hosts: all
+  sudo: True
+  roles:
+    - { role: 'development', tags: [ 'development' ] }

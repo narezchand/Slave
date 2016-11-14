@@ -1,0 +1,71 @@
+#!/bin/bash
+
+export DEV_DIR=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+usage() {
+  echo "usage: dev <subcommand>"
+  echo
+  echo "Available subcommands are:"
+  echo "   setup      Performs host specific setup tasks"
+  echo "   nuke       Deletes all development environment data"
+  echo
+  echo "Try 'dev <subcommand> help' for details."
+}
+
+main() {
+  if [ $# -lt 1 ]; then
+    usage
+    exit 1
+  fi
+
+  # load common functionality
+  . "$DEV_DIR/dev-common"
+
+  # This environmental variable fixes non-POSIX getopt style argument
+  # parsing, effectively breaking subcommand parsing on several
+  # Linux platforms.
+  export POSIXLY_CORRECT=1
+
+  . "$DEV_DIR/shFlags/src/shflags"
+  FLAGS_PARENT="git flow"
+
+  # allow user to request git action logging
+  DEFINE_boolean show_commands false 'show actions taken' c
+
+  # do actual parsing
+  FLAGS "$@" || exit $?
+  eval set -- "${FLAGS_ARGV}"
+
+  # sanity checks
+  SUBCOMMAND="$1"; shift
+
+  if [ ! -e "$DEV_DIR/dev-$SUBCOMMAND" ]; then
+    usage
+    exit 1
+  fi
+
+  # run command
+  . "$DEV_DIR/dev-$SUBCOMMAND"
+  FLAGS_PARENT="dev $SUBCOMMAND"
+
+  # test if the first argument is a flag (i.e. starts with '-')
+  # in that case, we interpret this arg as a flag for the default
+  # command
+  SUBACTION="default"
+  if [ "$1" != "" ] && { ! echo "$1" | grep -q "^-"; } then
+    SUBACTION="$1"; shift
+  fi
+  if ! type "cmd_$SUBACTION" >/dev/null 2>&1; then
+    warn "Unknown subcommand: '$SUBACTION'"
+    usage
+    exit 1
+  fi
+
+  # run the specified action
+  if [ $SUBACTION != "help" ] && [ $SUBCOMMAND != "init" ] ; then
+    init
+  fi
+  cmd_$SUBACTION "$@"
+}
+
+main "$@"

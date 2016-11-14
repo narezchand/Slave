@@ -1,0 +1,38 @@
+# {{ ansible_managed }}
+
+## this host
+{% for host in setupLANEtcHosts %}
+{% if ansible_fqdn == host.fqdn %}
+127.0.0.1         {{ ansible_fqdn }} {{ host.short }}.lan localhost
+{% endif %}
+{% endfor %}
+
+## network hosts
+{% for host in setupNetworkEtcHosts %}
+{% if ansible_fqdn == host.fqdn %}{% continue %}{% endif %}
+{{ host.address.ljust(18, " ") }}{{ host.fqdn }} {{ host.short }}
+{% endfor %}
+
+## lan hosts
+{% for host in setupLANEtcHosts %}
+{% if ansible_fqdn == host.fqdn %}{% continue %}{% endif %}
+{{ host.address.ljust(18, " ") }}{{ host.short }}.lan
+{% endfor %}
+
+## gluster hosts
+{% for host in setupGlusterFSHosts %}
+{% if ansible_fqdn == host.fqdn %}
+127.0.0.1          {{ host.short }}
+{% else %}
+{{ host.address.ljust(18, " ") }} {{ host.short }}
+{% endif %}
+{% endfor %}
+
+# The following lines are desirable for IPv6 capable hosts
+# (added automatically by netbase upgrade)
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts

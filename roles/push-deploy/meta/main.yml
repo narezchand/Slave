@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: Sean O'Shaughnessy
+  description: Setup and configuration of "git-push-to-deploy" with Capistrano
+  license: MIT
+  min_ansible_version: 1.2
+  platforms:
+    - name: Ubuntu
+      versions:
+        - precise
+    - name: Debian
+      versions:
+        - wheezy
+  categories:
+    - system
+    - web
+    - development

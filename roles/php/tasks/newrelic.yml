@@ -1,0 +1,105 @@
+---
+- name: add newrelic apt key
+  apt_key: >
+    url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB31B29E5548C16BF state=present
+  tags:
+    - php:newrelic
+
+- name: add newrelic package sources
+  apt_repository: >
+    repo='deb http://apt.newrelic.com/debian/ newrelic non-free' state=present
+  tags:
+    - php:newrelic
+
+- name: install newrelic packages
+  apt: >
+    pkg={{ item }} state=installed
+  with_items:
+    - newrelic-php5
+    - newrelic-sysmond
+  tags:
+    - php:newrelic
+
+- name: add /etc/newrelic/nrsysmond.cfg
+  template: >
+    src=etc-newrelic-nrsysmond.cfg.j2
+    dest=/etc/newrelic/nrsysmond.cfg
+    owner=root group=root mode=0644
+  notify:
+    - newrelic-sysmond restart
+  tags:
+    - php:newrelic
+
+- name: add /etc/newrelic/newrelic.cfg
+  copy: >
+    src=etc-newrelic-newrelic.cfg
+    dest=/etc/newrelic/newrelic.cfg
+    owner=root group=root mode=0644
+  notify: newrelic-daemon restart
+  tags:
+    - php:newrelic
+
+- name: check if newrelic.so exists
+  shell: >
+    test -f {{ phpModulePath }}/newrelic.so
+  ignore_errors: True
+  register: phpNewRelicExists
+  changed_when: False
+  tags:
+    - php:newrelic
+
+- name: add /tmp/install-newrelic.sh
+  template: >
+    src=tmp-install-newrelic.sh.j2
+    dest=/tmp/install-newrelic.sh
+    owner=root group=root mode=0700
+  when: phpNewRelicExists.rc != 0
+  tags:
+    - php:newrelic
+
+- name: run /tmp/install-newrelic.sh
+  shell: chdir=/tmp ./install-newrelic.sh
+  when: phpNewRelicExists.rc != 0
+  tags:
+    - php:newrelic
+
+- name: add /etc/php5/mods-available/newrelic.ini
+  template: >
+    src=etc-php5-mods-available-newrelic.ini.j2
+    dest=/etc/php5/mods-available/newrelic.ini
+    owner=root group=root mode=0644
+  notify:
+    - newrelic-daemon restart
+    - php5-fpm reload
+  tags:
+    - php:newrelic
+
+# symlink here as opposed to any of the 'mods enabled'
+# vars because these tasks only execute if a license key is present
+- name: add /etc/php5/fpm/conf.d/20-newrelic.ini symlink
+  file: >
+    src=/etc/php5/mods-available/newrelic.ini
+    dest=/etc/php5/fpm/conf.d/20-newrelic.ini
+    owner=root group=root state=link
+  notify:
+    - newrelic-daemon restart
+    - php5-fpm reload
+  tags:
+    - php:newrelic
+
+- name: remove /etc/php5/*/conf.d/newrelic.ini if exists
+  file: >
+    path=/etc/php5/{{ item }}/conf.d/newrelic.ini state=absent
+  with_items:
+    - fpm
+    - cli
+  notify:
+    - php5-fpm reload
+  tags:
+    - php:newrelic
+
+- name: ensure newrelic-daemon started
+  service: name=newrelic-daemon state=started enabled=yes
+  ignore_errors: True
+  tags:
+    - php:newrelic

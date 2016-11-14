@@ -1,0 +1,13 @@
+---
+- name: add /opt/tools
+  file: path=/opt/tools state=directory owner=root group=root mode=0755
+  tags:
+    - setup:tools
+
+- name: add /opt/tools/memory-usage
+  copy: >
+    src=opt-tools-memory-usage
+    dest=/opt/tools/memory-usage
+    owner=root group=sudo mode=0770
+  tags:
+    - setup:tools

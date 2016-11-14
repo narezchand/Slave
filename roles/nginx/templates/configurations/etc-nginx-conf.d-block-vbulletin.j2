@@ -1,0 +1,11 @@
+  location @vbulletin {
+    internal;
+
+    rewrite /threads/.*       /showthread.php?$uri&$args      last;
+    rewrite /forums/.*        /forumdisplay.php?$uri&$args    last;
+    rewrite /members/.*       /member.php?$uri&$args          last;
+    rewrite /blogs/.*         /blog.php?$uri&$args            last;
+    rewrite /entries/.*       /entry.php?$uri&$args           last;
+
+    rewrite ^/(?:(.*?)(?:/|$))(.*|$)$   /$1.php?r=$2          last;
+  }

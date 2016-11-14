@@ -1,0 +1,94 @@
+---
+# default vars - can apply to any OS
+
+# the NGINX package name
+# for debug package:
+# nginxPackage: nginx-debug_1.7.7-2~{{ ansible_lsb.codename }}_amd64.deb
+nginxPackage: "nginx_1.7.7-2~{{ ansible_lsb.codename }}_amd64.deb"
+
+# where should NGINX cached files live
+nginxCachePath: /var/cache/nginx
+
+# what type of configuration should be used on this host?
+# available: lb, backend, standalone
+nginxConfiguration: standalone
+
+# when a request arrives from a specific IP address with
+# the X-Forwarded-For header, use that header as the
+# actual IP address of the request
+nginxSetRealIPAddresses: []
+# example:
+# - 192.168.1.0/32
+
+# how many days worth of logs to keep, defaults to 15 days
+nginxLogRotate: 15
+
+# what IP addresses can bypass the maintenance.html file
+nginxAllowedDuringMaintenance: []
+# example:
+# - 192.168.1.1
+# - 192.168.10.15
+
+# what IP addresses can make requests to wp-cron.php
+nginxAllowedWPCron: []
+# example:
+# - 192.168.1.1
+# - 192.168.10.15
+
+# an array of user agent strings to block
+nginxBadBots: []
+# example:
+#  - libwww-perl
+#  - ~(?i)(httrack|htmlparser|libwww)
+
+# an array of http referrers to block
+nginxBadReferers: []
+# example:
+# - viagara
+
+# what cookies are considered 'state' cookies - used to log
+# if a visit was potentially logged in or not
+nginxLoggedInCookies:
+  - "comment_author_"
+  - "wordpress_logged_in_(.+)"
+  - "wp-postpass_"
+
+# IP addresses of backend servers to load balance requests to
+nginxUpstreams: []
+# example:
+#  - 127.0.0.1:8080
+
+# the port that nginx should listen on, default 80 but can
+# be changed via group/host var for servers that may be behind an lb
+nginxListenPort: 80
+
+# what is the default host name this server should listen on
+# in addition to 127.0.0.1
+nginxDefaultServerName: "{{ ansible_fqdn }}"
+
+# raw configuration that is added to /etc/nginx/sites-available/default.conf
+nginxDefaultConfiguration: ""
+
+# array of hashes containing SSL certs and keys to add as well
+# as which domains to listen on (essentially the filename that is
+# later used in a site config)
+nginxSSLData: []
+# example:
+#  -
+#    certificate: |
+#        -----BEGIN CERTIFICATE-----
+#        ...
+#        -----END CERTIFICATE-----
+#    key: |
+#        -----BEGIN RSA PRIVATE KEY-----
+#        ...
+#        -----END RSA PRIVATE KEY-----
+#    name: blog.sonyentertainmentnetwork.com
+
+# an array of string IP/CIDRs that should not be prompted for any htpasswd
+nginxHtpasswdWhitelist: []
+
+# whether or not nginx should attempt to map missing assets
+# to the production counterpart. requires assetsMapping variable
+# set for each instance that should map assets to a production domain
+nginxAssetsMappingEnabled: true

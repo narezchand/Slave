@@ -1,0 +1,11 @@
+---
+# default vars - can apply to any OS
+
+# what sphinx configurations to install for
+sphinxInstances: []
+# example:
+# - site1
+# - site2
+
+# what s3 bucket to pull configurations from
+sphinxS3Bucket: ""

@@ -1,0 +1,142 @@
+---
+# default vars - can apply to any OS
+
+# sets the default system timezone
+setupTimezone: "Etc/UTC"
+
+# sets up /etc/hosts file with hosts reachable
+# over public network
+setupNetworkEtcHosts: []
+# example:
+#  -
+#    fqdn: stage.lde.atl.voceplatforms.com
+#    short: stage.lde.atl
+#    address: 50.100.150.200
+
+# sets up /etc/hosts file with hosts reachable
+# over LAN/private network. typically added to
+# datacenter group_vars
+setupLANEtcHosts: []
+# example:
+#  -
+#    fqdn: web1.rs.iad.voceplatforms.com
+#    short: web1.rs.iad
+#    address: 192.168.1.10
+
+# sets up info for glusterfs hosts in /etc/hosts
+setupGlusterFSHosts: []
+# example:
+#  -
+#    fqdn: glusterfs1.rs.iad.voceplatforms.com
+#    short: glusterfs1
+#    address: 192.168.3.1
+#  -
+#    fqdn: glusterfs2.rs.iad.voceplatforms.com
+#    short: glusterfs2
+#    address: 192.168.3.2
+
+# sets the top level domain for all the hosts
+setupNetworkTLD: ""
+
+# disable IPv6?
+setupDisableIPV6: true
+
+# the root certificate (used if SSL certs aren't signed by a trusted authority)
+setupNetworkRootCA: ""
+
+# mounts added to /etc/fstab
+setupNetworkMounts: []
+
+# should port 22 be open in the firewall to the outside?
+setupFirewallAllowSSH: false
+
+# what word should the MOTD display with figlet
+setupMOTDLogo: welcome
+
+# what log messages should be discarded from rsyslog
+setupRsyslogDiscards: |
+    :msg, contains, "pam_unix(cron:session): session opened for user root" ~
+
+# where should log messages be sent, if anywhere
+setupRsyslogDestination: ""
+
+# users that should be added
+setupUsers: []
+# example:
+#  -
+#    authorized_key: "ssh pub key"
+#    fullname: "Deploy User"
+#    groups: users
+#    mysqlPass: somepassword
+#    mysqlUser: deploy
+#    username: deploy
+#    shell: /bin/bash
+
+# an array of usernames that are enabled for a host
+# e.g. for user in setupUsers if item.username in setupUsersEnabled
+setupUsersEnabled: []
+
+# private key to connect to github
+setupSSHGitHubRSA: ""
+
+# private key to connect to github
+setupSSHBitBucketRSA: ""
+
+# private key for server to server connections as root
+setupSSHRootRSA: ""
+
+# pub key of setupSSHRootRSA
+setupSSHRootAuthorizedKey: ""
+
+# private key for server to server connections as robot
+setupSSHRobotRSA: ""
+
+# pub key of setupSSHRobotRootRSA
+setupSSHRobotAuthorizedKey: ""
+
+# gems that can be installed via a specific group
+# best used in group_vars
+setupRubyGroupGems: []
+
+# gems that can be installed via a specific host
+# best used in host_vars
+setupRubyHostGems: []
+
+# which npm packages to globally install
+setupNPMGlobals:
+  - 'grunt-cli'
+
+# should ansible be cloned onto the node for execution with '-c local'
+setupAnsibleCloneOnNode: false
+
+# if setupAnsibleCloneOnNode is true, where should ansible be cloned from?
+setupAnsibleRepoURL: ""
+
+# cron jobs to add to the system
+# best used in host vars
+setupCronJobs: []
+# example:
+#  -
+#    day: "*"
+#    hour: "*"
+#    job: "some-command > /dev/null 2>&1"
+#    minute: 45
+#    month: "*"
+#    name: "cron: run something on the 45th minute"
+#    state: present
+#    user: root
+#    weekday: "*"
+
+# an array of items that should be allowed through the firewall
+# internal hosts defined in setupEtcHosts are allowed communication
+# to and from eachother on any port, so this var would only need
+# public IP addresses to specific ports+protocols
+setupFirewallWhitelist: []
+# example:
+#  -
+#    src: 10.0.0.0/8
+#    proto: tcp
+#    port: 80
+
+# use zsh for the root user?
+setupRootUserZSH: true

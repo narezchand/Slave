@@ -1,0 +1,56 @@
+[{{ item.name }}]
+
+## global/environment indepdent vars
+prefix                                        = /var/www/{{ item.name }}
+chdir                                         = /
+user                                          = www-data
+group                                         = www-data
+listen                                        = tmp/php5-fpm.sock
+listen.owner                                  = www-data
+listen.group                                  = www-data
+listen.mode                                   = 0666
+ping.path                                     = /fpm/ping
+ping.response                                 = pong
+catch_workers_output                          = yes
+
+## security
+security.limit_extensions                     = .php
+php_admin_value[open_basedir]                 = /usr/share/php5:/var/www/{{ item.name }}/htdocs:/var/www/{{ item.name }}/tmp
+
+## process management vars
+pm                                            = dynamic
+pm.max_requests                               = 100
+pm.status_path                                = /fpm/status
+pm.max_children                               = 5
+pm.start_servers                              = 2
+pm.min_spare_servers                          = 1
+pm.max_spare_servers                          = 3
+
+## temp directory handling
+env[TMP]                                      = /var/www/{{ item.name }}/tmp
+env[TMPDIR]                                   = /var/www/{{ item.name }}/tmp
+env[TEMP]                                     = /var/www/{{ item.name }}/tmp
+php_admin_value[upload_tmp_dir]               = /var/www/{{ item.name }}/tmp
+
+## php ini variables
+## _flag, _value = can be overridden with ini_set()
+## _admin_flag, _admin_value = can't be overridden with ini_set()
+php_flag[display_errors]                      = off
+php_admin_flag[log_errors]                    = on
+
+## log settings
+php_admin_value[error_log]                    = /var/log/fpm.error.log
+php_admin_value[error_reporting]              = E_ERROR | E_WARNING | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR
+
+## request timeouts and upload settings
+request_terminate_timeout                     = 60s
+php_value[max_execution_time]                 = 65
+php_value[post_max_size]                      = {{ item.instance.maxUploadSize|default(25) }}M
+php_value[upload_max_filesize]                = {{ item.instance.maxUploadSize|default(25) }}M
+
+{% if item.instance.phpEnvVariables is defined %}
+## application specific php vars
+{% for _var in item.instance.phpEnvVariables %}
+php_value[{{ _var.variable }}]                = "{{ _var.value }}"
+{% endfor %}
+{% endif %}

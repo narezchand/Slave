@@ -1,0 +1,99 @@
+---
+- name: retrieve OS specific variables
+  include_vars: "{{ ansible_distribution }}.yml"
+
+- name: install sphinx requirements
+  apt: >
+    pkg={{ item }} state=installed update_cache=yes cache_valid_time=86400
+  with_items:
+    - libpq5
+
+- name: add sphinx mysql user with read privileges
+  mysql_user: >
+    state=present
+    append_privs=yes
+    user=sphinx
+    password=sphinx
+    host="%"
+    priv={{ item }}.*:SELECT
+  with_items: sphinxInstances
+
+## requires creation of a sphinx_status table
+- name: add sphinx mysql user with write privileges for sphinx table
+  mysql_user: >
+    state=present
+    append_privs=yes
+    user=sphinx
+    password=sphinx
+    host="%"
+    priv={{ item }}.sphinx_status:INSERT,UPDATE,DELETE
+  with_items: sphinxInstances
+
+- name: check if sphinxsearch installed
+  shell: dpkg --get-selections | grep "^sphinxsearch"
+  register: sphinxNotInstalled
+  ignore_errors: True
+  changed_when: False
+
+- name: get sphinxsearch
+  get_url: >
+    url=http://sphinxsearch.com/files/{{ sphinxStableRelease }}
+    dest=/usr/local/src/{{ sphinxStableRelease }}
+    owner=root group=root mode=0755
+  when: sphinxNotInstalled.rc != 0
+
+- name: install sphinxsearch
+  shell: >
+    dpkg -i /usr/local/src/{{ sphinxStableRelease }}
+  when: sphinxNotInstalled.rc != 0
+
+- name: stop sphinxsearch
+  service: name=sphinxsearch state=stopped enabled=no
+
+- name: remove /etc/cron.d/sphinxsearch
+  file: path=/etc/cron.d/sphinxsearch state=absent
+
+- name: remove default sphinx.conf
+  file: path=/etc/sphinxsearch/sphinx.conf state=absent
+
+- name: add /var/data/sphinxsearch directory
+  file: >
+    path=/var/data/sphinxsearch state=directory
+    owner=root group=root mode=0750
+  with_items: sphinxInstances
+
+- name: add /var/data/sphinxsearch/instance directories
+  file: >
+    path=/var/data/sphinxsearch/{{ item }} state=directory
+    owner=root group=root mode=0750
+  with_items: sphinxInstances
+
+- name: add /etc/supervisor/conf.d/sphinxsearch-group.conf
+  template: >
+    src=etc-supervisor-conf.d-sphinxsearch-group.conf
+    dest=/etc/supervisor/conf.d/sphinxsearch-group.conf
+    owner=root group=root mode=0640
+  when: sphinxInstances
+  notify: restart sphinxsearch instances
+
+- name: add /etc/supervisor/conf.d instance configs
+  template: >
+    src=etc-supervisor-conf.d-sphinxsearch-instance.conf.j2
+    dest=/etc/supervisor/conf.d/sphinxsearch-{{ item }}.conf
+    owner=root group=root mode=0644
+  with_items: sphinxInstances
+  notify: restart sphinxsearch instances
+
+- name: add /etc/sphinxsearch instance configs
+  get_url: >
+    url=http://{{ sphinxS3Bucket }}.s3.amazonaws.com/sphinx-configs/{{ item }}.conf
+    dest=/etc/sphinxsearch/{{ item }}.conf
+    owner=root group=root mode=0755 force=yes
+  with_items: sphinxInstances
+  notify: restart sphinxsearch instances
+
+- name: add /etc/logrotate.d/sphinxsearch
+  copy: >
+    src=etc-logrotate.d-sphinxsearch
+    dest=/etc/logrotate.d/sphinxsearch
+    owner=root group=root mode=0640

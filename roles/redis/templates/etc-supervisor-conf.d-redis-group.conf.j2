@@ -1,0 +1,11 @@
+[group:redis]
+programs=
+{%- for item in redisInstances %}
+{%- if not loop.last %}
+redis-{{ item.name }},
+{%- else %}
+redis-{{ item.name }}
+{%- endif %}
+{% endfor %}
+
+priority=100

@@ -1,0 +1,3 @@
+---
+- name: auditd restart
+  service: name=auditd state=restarted enabled=yes

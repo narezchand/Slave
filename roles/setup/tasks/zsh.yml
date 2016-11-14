@@ -1,0 +1,115 @@
+---
+- name: clone oh-my-zsh into home directory for users with zsh
+  git: >
+    repo=https://github.com/robbyrussell/oh-my-zsh.git
+    dest=/home/{{ item.username }}/.oh-my-zsh force=yes
+  with_items: setupUsers
+  when: >
+    item.username in setupUsersEnabled and
+    item.shell == "/usr/bin/zsh"
+  tags:
+    - setup:zsh
+
+- name: update owner/group for oh-my-zsh for users with zsh
+  file: >
+    path=/home/{{ item.username }}/.oh-my-zsh
+    state=directory recurse=yes
+    owner={{ item.username }} group={{ item.username }}
+  with_items: setupUsers
+  when: >
+    item.username in setupUsersEnabled and
+    item.shell == "/usr/bin/zsh"
+  tags:
+    - setup:zsh
+
+- name: create .oh-my-zsh/custom/themes for users with zsh
+  file: >
+    path=/home/{{ item.username }}/.oh-my-zsh/custom/themes
+    state=directory owner={{ item.username }} group={{ item.username }}
+  with_items: setupUsers
+  when: >
+    item.username in setupUsersEnabled and
+    item.shell == "/usr/bin/zsh"
+  tags:
+    - setup:zsh
+
+- name: add user zsh theme
+  copy: >
+    src=home-.oh-my-zsh-themes-voceplatforms.zsh-theme
+    dest=/home/{{ item.username }}/.oh-my-zsh/custom/themes/voceplatforms.zsh-theme
+  with_items: setupUsers
+  when: >
+    item.username in setupUsersEnabled and
+    item.shell == "/usr/bin/zsh"
+  tags:
+    - setup:zsh
+
+- name: add example .zshrc for users with zsh
+  copy: >
+    src=dot-zshrc
+    dest=/home/{{ item.username }}/.zshrc
+    owner={{ item.username }} group={{ item.username }} force=no
+  with_items: setupUsers
+  when: >
+    item.username in setupUsersEnabled and
+    item.shell == "/usr/bin/zsh"
+  tags:
+    - setup:zsh
+
+- name: clone oh-my-zsh into /root
+  git: >
+    repo=https://github.com/robbyrussell/oh-my-zsh.git
+    dest=/root/.oh-my-zsh force=yes
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh
+
+- name: update permissions of /root/.oh-my-zsh
+  file: >
+    path=/root/.oh-my-zsh
+    state=directory recurse=yes
+    owner=root group=root
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh
+
+- name: create /root/.oh-my-zsh/custom/themes
+  file: >
+    path=/root/.oh-my-zsh/custom/themes
+    state=directory owner=root group=root
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh
+
+- name: add root zsh theme
+  copy: >
+    src=home-.oh-my-zsh-themes-voceplatforms.zsh-theme
+    dest=/root/.oh-my-zsh/custom/themes/voceplatforms.zsh-theme
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh
+
+- name: add example .zshrc for root user
+  copy: >
+    src=dot-zshrc
+    dest=/root/.zshrc
+    owner=root group=root force=no
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh
+
+- name: add /etc/zsh/zshenv
+  copy: >
+    src=etc-zsh-zshenv
+    dest=/etc/zsh/zshenv
+    owner=root group=root mode=0644
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh
+
+- name: set root shell to /usr/bin/zsh
+  user: >
+    name=root shell=/usr/bin/zsh
+  when: setupRootUserZSH
+  tags:
+    - setup:zsh

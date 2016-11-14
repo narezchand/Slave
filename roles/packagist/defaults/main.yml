@@ -1,0 +1,5 @@
+---
+# default vars - can apply to any OS
+
+packagistDomainName: packagist.voceconnect.com
+packagistPluginsDomainName: wp-plugins.{{ packagistDomainName }}

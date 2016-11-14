@@ -1,0 +1,4 @@
+---
+- name: gitolite setup
+  shell: >
+    su git -c '/usr/local/bin/gitolite setup'

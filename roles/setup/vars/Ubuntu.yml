@@ -1,0 +1,3 @@
+---
+# use the LSB codename for ubuntu systems
+setupNPMPackageSource: "{{ ansible_lsb.codename }}"

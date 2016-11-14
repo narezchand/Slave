@@ -1,0 +1,67 @@
+{
+  "name": "sandbox",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "status": "active",
+  "type": "wordpress",
+  "instances": [
+    {
+      "assetsMapping": [
+
+      ],
+      "cdnEnabled": false,
+      "cdnZoneIDs": [
+
+      ],
+      "committers": [
+
+      ],
+      "database": {
+        "name": "sandbox",
+        "type": "mysql"
+      },
+      "documentRoot": "",
+      "domainRedirects": [
+
+      ],
+      "domains": [
+
+      ],
+      "forceSSLadmin": false,
+      "forceSSLlogin": false,
+      "htpasswdFullSite": false,
+      "htpasswdUsers": [
+        {
+          "username": "sandbox",
+          "password": "spam32"
+        }
+      ],
+      "maxUploadSize": 500,
+      "name": "development",
+      "nginxLocationBackend": "",
+      "nginxLocationBlocks": "",
+      "nginxRequestLimits": false,
+      "nodeEnvVariables": [
+
+      ],
+      "nodeExecCommand": "",
+      "outputCache": false,
+      "phpEnvVariables": [
+
+      ],
+      "primaryDomain": "sandbox.voceconnect.dev",
+      "servers": [
+        "development.voceplatforms.com"
+      ],
+      "ssl": [
+
+      ],
+      "uriRedirects": [
+
+      ],
+      "wpConfig": ""
+    }
+  ]
+}

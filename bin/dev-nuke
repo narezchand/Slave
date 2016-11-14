@@ -1,0 +1,51 @@
+#!/bin/bash
+
+usage() {
+  echo "usage: dev nuke [-v]"
+  echo
+  echo "options:"
+  echo "       -h  shows this message"
+  echo
+  echo "Destroys virtual machine and settings..."
+}
+
+init() {
+  check_executed_from_within_host
+  echo "If prompted, enter your Mac OSX user password..."
+}
+
+# default entry when no SUBACTION is given
+cmd_default() {
+  ## shutdown the machine if running
+  vagrant halt 2>/dev/null
+
+  ## destroy the virtual machine
+  vagrant destroy -f 2>/dev/null
+
+  ## delete the 'cache' and metadata directories from vagrant
+  ## this forces fetching of a fresh .box file
+  if test -d $HOME/.vagrant/machines/development.voceplatforms.com; then
+    rm -rf $HOME/.vagrant/machines/development.voceplatforms.com
+  fi
+  if test -d $HOME/.vagrant.d/boxes/development.voceplatforms.com; then
+    rm -rf $HOME/.vagrant.d/boxes/development.voceplatforms.com
+  fi
+
+  ## delete setup files and configuration settings
+  configs=(
+    inventory/host_vars/development.voceplatforms.com.yml
+    virtualbox-settings
+  )
+  for config in "${configs[@]}"
+  do
+    test -f "${config}" && \
+      rm -f "${config}"
+  done
+
+  echo "development environment nuked! run ./bin/dev setup to start over!"
+}
+
+cmd_help() {
+  usage
+  exit 0
+}

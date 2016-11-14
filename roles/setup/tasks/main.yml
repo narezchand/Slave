@@ -1,0 +1,267 @@
+---
+- name: retrieve OS specific variables
+  include_vars: "{{ ansible_distribution }}.yml"
+
+- name: purge unused packages
+  apt: >
+    pkg={{ item }} state=absent purge=yes
+  with_items:
+    - bsd-mailx
+    - exim4
+    - exim4-base
+    - exim4-config
+    - exim4-daemon-light
+
+- name: install packages
+  apt: >
+    pkg={{ item }} state=installed update_cache=yes cache_valid_time=86400
+  with_items:
+    - ack-grep
+    - apparmor
+    - apparmor-profiles
+    - apparmor-utils
+    - autoconf
+    - automake
+    - autotools-dev
+    - bc
+    - binutils
+    - bison
+    - build-essential
+    - checkinstall
+    - cpp
+    - curl
+    - dnsutils
+    - figlet
+    - flex
+    - g++
+    - gcc
+    - gdisk
+    - git-core
+    - git-doc
+    - gnu-standards
+    - htop
+    - iftop
+    - libarchive-zip-perl
+    - libc6-dev
+    - libcrypt-ssleay-perl
+    - libcurl4-openssl-dev
+    - libffi-dev
+    - libgdbm-dev
+    - libicu-dev
+    - libncurses5-dev
+    - libpcre3
+    - libpcre3-dev
+    - libpopt-dev
+    - libreadline-dev
+    - libreadline6
+    - libreadline6-dev
+    - libsasl2-modules
+    - libssh2-1
+    - libssl-dev
+    - libtool
+    - libwww-perl
+    - libxml2-dev
+    - libyaml-dev
+    - locate
+    - logrotate
+    - lsof
+    - lynx
+    - m4
+    - make
+    - mutt
+    - netcat
+    - netcat-openbsd
+    - nload
+    - ntpdate
+    - openssh-client
+    - openssh-server
+    - openssl
+    - perl
+    - perl-modules
+    - psmisc
+    - python-software-properties
+    - python-setuptools
+    - rdate
+    - rsync
+    - rsyslog
+    - rsyslog-gnutls
+    - rsyslog-relp
+    - screen
+    - ssed
+    - strace
+    - subversion
+    - supervisor
+    - sysstat
+    - unattended-upgrades
+    - unzip
+    - wget
+    - zip
+    - zsh
+    - zlib1g
+    - zlib1g-dev
+
+- name: add /etc/timezone
+  lineinfile: >
+    dest=/etc/timezone
+    regexp="^"
+    line='{{ setupTimezone }}'
+    state=present
+  notify: timezone apply
+
+- name: add cron job to update time with ntpdate
+  cron: >
+    name="ntpdate sync" job="/usr/sbin/ntpdate ntp.ubuntu.com > /dev/null 2>&1"
+    user=root state=present
+    minute="30" hour="6"
+
+- name: stop ntp daemon
+  service: name=ntp state=stopped enabled=false
+  changed_when: False
+  ignore_errors: True
+
+- name: add /etc/hostname
+  template: >
+    src=etc-hostname.j2
+    dest=/etc/hostname
+    owner=root group=root mode=0644
+  notify: hostname apply
+
+- name: add /etc/hosts
+  template: >
+    src=etc-hosts.j2
+    dest=/etc/hosts
+    owner=root group=root mode=0644
+  tags:
+    - host:discovery
+
+- name: add custom root certificate authority
+  template: >
+    src=usr-local-share-ca-certificates-network.crt
+    dest=/usr/local/share/ca-certificates/{{ setupNetworkTLD }}.crt
+    owner=root group=root mode=0644
+  notify: update-ca-certificates
+
+- name: add /etc/security/limits.conf
+  copy: >
+    src=etc-security-limits.conf
+    dest=/etc/security/limits.conf
+    owner=root group=root mode=0644
+
+- name: add /etc/sysctl.d/50-disable-ipv6.conf
+  copy: >
+    src=etc-sysctl.d-50-disable-ipv6.conf
+    dest=/etc/sysctl.d/50-disable-ipv6.conf
+    owner=root group=root mode=0644
+  when: setupDisableIPV6
+  notify: start procps
+
+- name: add /etc/sysctl.d/99-tuning.conf
+  copy: >
+    src=etc-sysctl.d-99-tuning.conf
+    dest=/etc/sysctl.d/99-tuning.conf
+    owner=root group=root mode=0644
+  notify: start procps
+
+- name: add /etc/network/interfaces
+  copy: >
+    src=etc-network/{{ ansible_fqdn }}
+    dest=/etc/network/interfaces
+    owner=root group=root mode=0644
+  when: "'rackspace' in group_names"
+  notify:
+    - networking restart
+
+- name: add /etc/ssh/sshd_config
+  template: >
+    src=etc-ssh-sshd_config.j2
+    dest=/etc/ssh/sshd_config
+    owner=root group=root mode=0644
+  notify:
+    - ssh restart
+
+- name: add /etc/ssh/ssh_config
+  template: >
+    src=etc-ssh-ssh_config.j2
+    dest=/etc/ssh/ssh_config
+    owner=root group=root mode=0644
+
+- name: update /etc/pam.d/common-session
+  lineinfile: >
+    state=present
+    regexp=^
+    line='session required        pam_limits.so'
+    dest=/etc/pam.d/common-session
+
+- name: ensure directory /etc/update-motd.d
+  file: >
+    path=/etc/update-motd.d state=directory
+    owner=root group=root mode=0644
+
+- name: unset executable bit on existing update-motd.d scripts
+  shell: >
+    find /etc/update-motd.d -type f ! -name '00-main' -exec chmod a-x {} \;
+  changed_when: False
+
+- name: add /etc/update-motd.d/00-main
+  template: >
+    src=etc-update-motd.d-00-main.j2
+    dest=/etc/update-motd.d/00-main
+    owner=root group=root mode=0755
+
+- name: check if /etc/motd is a file
+  shell: >
+    test -h /etc/motd
+  register: etcMotdExists
+  ignore_errors: True
+  changed_when: False
+  when: ansible_distribution == 'Debian'
+
+- name: remove /etc/motd file in debian
+  file: >
+    path=/etc/motd state=absent
+  when: >
+    ansible_distribution == 'Debian' and etcMotdExists.rc > 0
+
+- name: symlink /var/run/motd to /etc/motd in debian
+  file: >
+    src=/var/run/motd dest=/etc/motd
+    owner=root group=root state=link force=yes
+  when: ansible_distribution == 'Debian'
+
+- name: add /etc/apt/apt.conf.d/10periodic
+  copy: >
+    src=etc-apt-apt.conf.d-10periodic
+    dest=/etc/apt/apt.conf.d/10periodic
+    owner=root group=root mode=0644
+
+- name: add /etc/apt/apt.conf.d/50unattended-upgrades
+  copy: >
+    src=etc-apt-apt.conf.d-50unattended-upgrades
+    dest=/etc/apt/apt.conf.d/50unattended-upgrades
+    owner=root group=root mode=0644
+
+- name: ensure ssh is started
+  service: name=ssh state=started enabled=yes
+
+- name: add network mounts to /etc/fstab
+  lineinfile: >
+    dest=/etc/fstab
+    line='{{ item }}'
+    state=present
+    insertafter=EOF
+  with_items: setupNetworkMounts
+  notify:
+    - mount all filesystems
+
+- include: rsyslog.yml
+- include: sudo.yml
+- include: user-root.yml
+- include: user-robot.yml
+- include: users.yml
+- include: ruby.yml
+- include: npm.yml
+- include: tools.yml
+- include: ansible.yml
+- include: cron.yml
+- include: firewall.yml
+- include: zsh.yml

@@ -1,0 +1,81 @@
+---
+- name: add defined root user from any host
+  mysql_user: >
+    user={{ mysqlRootUsername }}
+    password={{ mysqlRootPassword }}
+    host="%"
+    priv=*.*:ALL,GRANT
+  tags:
+    - mariadb:secure-install
+
+- name: delete anonymous mysql users
+  mysql_user: >
+    user='' host={{ item }} state="absent"
+  with_items:
+    - localhost
+    - "{{ ansible_fqdn }}"
+  tags:
+    - mariadb:secure-install
+
+- name: add username to /root/.my.cnf
+  ini_file: >
+    dest=/root/.my.cnf section=client
+    option=user value={{ mysqlRootUsername }}
+  tags:
+    - mariadb:secure-install
+
+- name: add password to /root/.my.cnf
+  ini_file: >
+    dest=/root/.my.cnf section=client
+    option=password value={{ mysqlRootPassword }}
+  tags:
+    - mariadb:secure-install
+
+- name: delete the mysql root user for ipv6 localhost (::1)
+  mysql_user: user="root" host="::1" state="absent"
+  tags:
+    - mariadb:secure-install
+
+- name: delete the mysql root user for IPV4 localhost (127.0.0.1)
+  mysql_user: user="root" host="127.0.0.1" state="absent"
+  tags:
+    - mariadb:secure-install
+
+- name: delete the mysql root user for fqdn
+  mysql_user: >
+    user="root" host="{{ ansible_fqdn }}" state="absent"
+  tags:
+    - mariadb:secure-install
+
+- name: delete the mysql root user for hostname
+  mysql_user: >
+    user="root" host="{{ ansible_hostname }}" state="absent"
+  tags:
+    - mariadb:secure-install
+
+- name: delete the mysql root user localhost
+  mysql_user: user="root" host="localhost" state="absent"
+  tags:
+    - mariadb:secure-install
+
+- name: delete the mysql test database
+  mysql_db: db=test state=absent
+  tags:
+    - mariadb:secure-install
+
+- name: update debian-sys-maint user password
+  mysql_user: >
+    user={{ mysqlDebianSysMaintUser }}
+    password={{ mysqlDebianSysMaintPass }}
+    host="localhost"
+    priv=*.*:ALL,GRANT
+  tags:
+    - mariadb:secure-install
+
+- name: add /etc/mysql/debian.cnf
+  template: >
+    src=etc-mysql-debian.cnf.j2
+    dest=/etc/mysql/debian.cnf
+    owner=root group=root mode=0600
+  tags:
+    - mariadb:secure-install

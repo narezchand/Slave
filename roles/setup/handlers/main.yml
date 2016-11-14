@@ -1,0 +1,33 @@
+---
+- name: hostname apply
+  shell: /bin/hostname -F /etc/hostname
+
+- name: timezone apply
+  shell: dpkg-reconfigure --frontend noninteractive tzdata
+
+- name: networking restart
+  service: name=networking state=restarted
+
+- name: start procps
+  service: name=procps state=started
+
+- name: ssh restart
+  service: name=ssh state=restarted
+
+- name: update-ca-certificates
+  shell: >
+    /usr/sbin/update-ca-certificates
+
+- name: mount all filesystems
+  shell: >
+    /bin/mount -a
+
+- name: rsyslog restart
+  service: name=rsyslog state=restarted
+
+- name: apply /etc/sudoers
+  shell: >
+    visudo -q -c -f /etc/sudoers.tmp && cp /etc/sudoers.tmp /etc/sudoers
+
+- name: ufw restart
+  service: name=ufw state=restarted enabled=yes

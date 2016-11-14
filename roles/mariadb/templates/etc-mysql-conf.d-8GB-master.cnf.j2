@@ -1,0 +1,60 @@
+# {{ ansible_managed}}
+# 8GB mysql replication master configuration
+
+[mysqld]
+server-id                        = 100
+bind-address                     = {{ ansible_eth1.ipv4.address }}
+pid-file                         = /var/run/mysqld/mysqld.pid
+log-error                        = /var/lib/mysql/mysql-error.log
+
+character-set-server             = utf8
+collation-server                 = utf8_unicode_ci
+
+datadir                          = /var/lib/mysql/
+socket                           = /var/run/mysqld/mysqld.sock
+
+### LOGGING
+#log-queries-not-using-indexes   = 1
+slow-query-log                   = 1
+long-query-time                  = 2
+slow-query-log-file              = /var/lib/mysql/mysql-slow.log
+
+### INNODB OPTIONS
+innodb                           = FORCE
+default-storage-engine           = innodb
+innodb-file-format               = barracuda
+innodb-buffer-pool-size          = 4G
+innodb-log-file-size             = 256M
+innodb-flush-method              = O_DIRECT
+innodb-log-files-in-group        = 2
+innodb-flush-log-at-trx-commit   = 1
+innodb-file-per-table            = 1
+innodb-read-io-threads           = 32
+innodb-write-io-threads          = 32
+innodb-doublewrite               = 1
+innodb-thread-concurrency        = 0
+innodb-io-capacity               = 7000
+
+### REPLICATION SPECIFIC
+binlog_format                    = MIXED
+log-bin                          = /var/lib/mysql/mysql-bin
+expire-logs-days                 = 14
+sync-binlog                      = 1
+
+### OTHER THINGS, BUFFERS ETC
+skip-name-resolve
+max-allowed-packet               = 16M
+sysdate-is-now                   = 1
+tmp-table-size                   = 32M
+max-heap-table-size              = 32M
+query-cache-type                 = 0
+query-cache-size                 = 0
+max-connections                  = 100
+thread-cache-size                = 25
+open-files-limit                 = 65535
+table-definition-cache           = 2048
+table-open-cache                 = 5120
+
+### avoid statistics update when doing e.g show tables
+innodb-stats-on-metadata         = 0
+engine-condition-pushdown        = 1

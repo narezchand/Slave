@@ -1,0 +1,37 @@
+---
+- name: add user accounts
+  user: >
+    name={{ item.username }} comment="{{ item.fullname }}"
+    createhome=yes groups={{ item.groups }} shell={{ item.shell }}
+  with_items: setupUsers
+  when: item.username in setupUsersEnabled
+  tags:
+    - setup:users
+
+- name: add each user's authorized_keys
+  authorized_key: >
+    user="{{ item.username }}"
+    key="{{ item.authorized_key }}"
+  with_items: setupUsers
+  when: item.username in setupUsersEnabled
+  tags:
+    - setup:users
+
+- name: add .gitconfig
+  copy: >
+    src=dot-gitconfig
+    dest=/home/{{ item.username }}/.gitconfig
+    owner={{ item.username }} group={{ item.username }} mode=0644
+  with_items: setupUsers
+  when: item.username in setupUsersEnabled
+  tags:
+    - setup:users
+
+- name: lock down permissions for user home directories
+  file: >
+    path=/home/{{ item.username }} mode=0700
+    owner={{ item.username }} group={{ item.username }}
+  with_items: setupUsers
+  when: item.username in setupUsersEnabled
+  tags:
+    - setup:users

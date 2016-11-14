@@ -1,0 +1,24 @@
+---
+- name: install auditd package
+  apt: pkg=auditd state=installed
+
+- name: add /etc/audit/auditd.conf
+  copy: >
+    src=etc-audit-auditd.conf
+    dest=/etc/audit/auditd.conf
+    owner=root group=root mode=0640
+  notify: auditd restart
+
+- name: add /etc/audit/audit.rules
+  copy: >
+    src=etc-audit-audit.rules
+    dest=/etc/audit/audit.rules
+    owner=root group=root mode=0640
+  notify: auditd restart
+
+- name: add /etc/audisp/plugins.d/syslog.conf
+  copy: >
+    src=etc-audisp-plugins.d-syslog.conf
+    dest=/etc/audisp/plugins.d/syslog.conf
+    owner=root group=root mode=0640
+  notify: auditd restart

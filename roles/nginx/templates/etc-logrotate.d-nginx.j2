@@ -1,0 +1,28 @@
+## {{ ansible_managed }}
+/var/log/nginx/*/*.log {
+        daily
+        missingok
+        rotate {{ nginxLogRotate }}
+        compress
+        delaycompress
+        notifempty
+        create 644 www-data adm
+        sharedscripts
+        postrotate
+                [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+        endscript
+}
+
+/var/log/nginx/*.log {
+        daily
+        missingok
+        rotate {{ nginxLogRotate }}
+        compress
+        delaycompress
+        notifempty
+        create 644 www-data adm
+        sharedscripts
+        postrotate
+                [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+        endscript
+}

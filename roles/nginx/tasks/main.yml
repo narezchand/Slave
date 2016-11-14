@@ -1,0 +1,123 @@
+---
+- name: install nginx requirements
+  apt: >
+    pkg={{ item }} state=installed update_cache=yes cache_valid_time=86400
+  with_items:
+    - liblua5.1-0
+
+- name: check if nginx installed
+  shell: dpkg --get-selections | grep "nginx"
+  register: nginxNotInstalled
+  ignore_errors: True
+  changed_when: False
+
+- name: get custom built nginx packages
+  get_url: >
+    url=https://voce-packages.s3.amazonaws.com/{{ nginxPackage }}
+    dest=/usr/local/src/{{ nginxPackage }}
+    owner=root group=root mode=0600
+  when: nginxNotInstalled.rc != 0
+
+- name: install custom built nginx packages
+  shell: >
+    chdir=/usr/local/src dpkg -i {{ nginxPackage }}
+  when: nginxNotInstalled.rc != 0
+
+- name: mark nginx packages for 'hold'
+  shell: >
+    echo "nginx hold" | dpkg --set-selections
+  changed_when: False
+
+- name: remove package default configs in /etc/nginx/conf.d
+  file: >
+    path=/etc/nginx/conf.d/{{ item }} state=absent
+  with_items:
+    - default.conf
+    - example_ssl.conf
+
+- name: ensure directories in /etc/nginx
+  file: >
+    path=/etc/nginx/{{ item }} state=directory owner=root group=root mode=0700
+  with_items:
+    - ssl
+    - sites-available
+    - sites-enabled
+
+- name: ensure directory nginx cache path
+  file: >
+    path={{ nginxCachePath }} state=directory
+    owner=www-data group=root mode=0755
+
+- name: add /etc/nginx/nginx.conf
+  template: >
+    src=etc-nginx-nginx.conf.j2
+    dest=/etc/nginx/nginx.conf
+    owner=root group=root mode=0644
+  notify: nginx reload
+
+- name: add /etc/nginx/mime.types
+  copy: >
+    src=etc-nginx-mime.types
+    dest=/etc/nginx/mime.types
+    owner=root group=root mode=0644
+  notify: nginx reload
+
+- name: add /etc/logrotate.d/nginx config
+  template: >
+    src=etc-logrotate.d-nginx.j2
+    dest=/etc/logrotate.d/nginx
+    owner=root group=root mode=0644
+
+- name: ensure directory /opt/tools/nginx
+  file: path=/opt/tools/nginx state=directory owner=root group=root mode=0755
+
+- name: add /opt/tools/nginx/cache-inspector
+  copy: >
+    src=opt-tools-nginx-cache-inspector
+    dest=/opt/tools/nginx/cache-inspector
+    owner=root group=sudo mode=0770
+
+- name: add /opt/tools/nginx/cache-purger
+  copy: >
+    src=opt-tools-nginx-cache-purger
+    dest=/opt/tools/nginx/cache-purger
+    owner=root group=sudo mode=0770
+
+- name: ensure directory /opt/tools/permissions
+  file: >
+    path=/opt/tools/permissions state=directory
+    owner=root group=root mode=0755
+
+- name: copy fix permissions module to /opt/tools/permissions
+  copy: >
+    src=opt-tools-permissions-main.rb
+    dest=/opt/tools/permissions/main.rb
+    owner=root group=sudo mode=0440
+
+- name: ensure directory /var/www
+  file: path=/var/www state=directory owner=root group=root mode=0755
+
+- name: ensure directory /var/www/common
+  file: path=/var/www/common state=directory owner=www-data group=www-data mode=0755
+
+- name: add error pages to /var/www/common
+  copy: >
+    src={{ item }}
+    dest=/var/www/common/{{ item }}
+    owner=www-data group=www-data mode=0644
+  with_items:
+    - 401.html
+    - 403.html
+    - 404.html
+    - 413.html
+    - 429.html
+    - 503.html
+    - 50x.html
+    - robots.txt
+
+- include: configurations.yml
+- include: applications.yml
+- include: ssl.yml
+
+- name: ensure nginx started
+  service: name=nginx state=started enabled=yes

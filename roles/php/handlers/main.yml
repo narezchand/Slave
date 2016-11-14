@@ -1,0 +1,10 @@
+---
+- name: php5-fpm reload
+  service: name=php5-fpm state=reloaded
+  when: phpFPMEnabled
+
+- name: newrelic-daemon restart
+  service: name=newrelic-daemon state=restarted
+
+- name: newrelic-sysmond restart
+  service: name=newrelic-sysmond state=restarted

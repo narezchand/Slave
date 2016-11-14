@@ -1,0 +1,161 @@
+---
+- name: update application common htpasswd
+  htpasswd: >
+    path=/var/www/common/.htpasswd
+    owner=root group=root mode=0644
+    name={{ item.username }} password="{{ item.password }}"
+    create=yes state=present
+  with_items: nginxHtpasswdUsers
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: ensure directory /var/www/client
+  file: >
+    path=/var/www/{{ item.name }} state=directory
+    owner=root group=root mode=0755
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: ensure directory /var/www/client/htdocs
+  file: >
+    path=/var/www/{{ item.name }}/htdocs state=directory
+    owner=robot group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: ensure directory /var/www/client/htdocs/shared
+  file: >
+    path=/var/www/{{ item.name }}/htdocs/shared state=directory
+    owner=robot group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: ensure directory /var/www/client/htdocs/shared/node_modules
+  file: >
+    path=/var/www/{{ item.name }}/htdocs/shared/node_modules state=directory
+    owner=robot group=users mode=2755
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: ensure directory /var/www/client/htdocs/releases
+  file: >
+    path=/var/www/{{ item.name }}/htdocs/releases state=directory
+    owner=robot group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: ensure directory /var/www/client/tmp
+  file: >
+    path=/var/www/{{ item.name }}/tmp state=directory
+    owner=nobody group=nogroup mode=777
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: create /var/log/nginx/client directory
+  file: >
+    path=/var/log/nginx/{{ item.name }} state=directory
+    owner=root group=root mode=0755
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: add /etc/rsyslog.d/client log file for active sites
+  template: >
+    src=etc-rsyslog.d-10-app.conf.j2
+    dest=/etc/rsyslog.d/10-{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  notify: rsyslog restart
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: remove /etc/rsyslog.d/client log file for inactive sites
+  file: >
+    path=/etc/rsyslog.d/10-{{ item.name }}.conf state=absent
+  with_items: applications
+  when: >
+    item.instance and
+    item.status in ['inactive', 'archived']
+  notify: rsyslog restart
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: add /etc/nginx/sites-available config
+  template: >
+    src=applications/{{ item.type }}-{{ nginxConfiguration }}.conf.j2
+    dest=/etc/nginx/sites-available/{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  notify: nginx reload
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: add /etc/nginx/sites-enabled symlinks for active sites
+  file: >
+    src=/etc/nginx/sites-available/{{ item.name }}.conf
+    dest=/etc/nginx/sites-enabled/{{ item.name }}.conf
+    owner=root group=root state=link
+  with_items: applications
+  when: >
+    item.instance and
+    item.status == 'active'
+  notify: nginx reload
+  tags:
+    - client:provision
+    - nginx:applications
+
+- name: remove /etc/nginx/sites-enabled symlinks for inactive sites
+  file: >
+    path=/etc/nginx/sites-enabled/{{ item.name }}.conf state=absent
+  with_items: applications
+  when: >
+    item.instance and
+    item.status in ['inactive', 'archived']
+  notify: nginx reload
+  tags:
+    - client:provision
+    - nginx:applications

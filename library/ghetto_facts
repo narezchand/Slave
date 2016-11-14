@@ -1,0 +1,234 @@
+#!/usr/bin/env ruby
+
+# all of these gems must be installed on *remote* hosts!
+require 'rubygems'
+require 'json'
+require 'rack'
+require 'httparty'
+require 'shellwords'
+require 'logger'
+require 'erb'
+
+# write to a ghetto.log file in tmp, level: info
+$logger = Logger.new File.open('/tmp/ghetto.log', 'a')
+$logger.level = Logger::INFO
+
+class API
+  include HTTParty
+  base_uri 'https://api.voceconnect.com'
+  headers 'User-Agent' => "Ansible Project Fact Gathering (#{Socket.gethostname})",
+          'Content-Type' => 'application/json'
+  attr_reader :key
+  def initialize(key)
+    @key = key
+  end
+  def projects(options = {})
+    begin
+      response = self.class.get('/projects/', :query => { :apikey => @key }.merge(options))
+      return JSON.parse(response.body)
+    rescue Exception => e
+      puts e.message
+      puts e.backtrace.inspect
+      fail "API error for 'https://api.voceconnect.com/projects/'! Is your API key correct? Is the API available?"
+    end
+  end
+end
+
+def fail(message)
+  output = {
+    'failed' => 1,
+    'msg' => "#{message}"
+  }
+  puts JSON.dump(output)
+  exit 1
+end
+
+def add_instance_property(apps)
+  apps.each do |app|
+    # set a nil app instance by default
+    app["instance"] = nil
+
+    # select the instance data from 'instances' based
+    # on the current stage name/environment
+    instance = app["instances"].select {|i| i["name"] == $stage}.first
+
+    # if the application doesnt have an instance on this $stage and
+    # doesn't have a "servers" property, move on
+    next unless instance and instance.has_key? "servers"
+
+    # if the "app" server type has a match for this host, set the instance var
+    begin
+      %w{app db}.each do |role|
+        instance["servers"]["#{role}"].each do |host|
+          if host == $host
+            app["instance"] = instance
+          end
+        end
+      end
+    rescue
+      $logger.error "#{app["name"]} servers key has wrong format, falling back! (library/ghetto_facts:56)"
+      instance["servers"].each do |host|
+        if host == $host
+          app["instance"] = instance
+        end
+      end
+    end
+  end
+
+  apps
+end
+
+def get_domains_hosted(apps)
+  domains_hosted = []
+
+  apps.each do |app|
+    instance = app["instance"]
+    next if instance.nil?
+
+    ## check if instance has ssl. if static IP, dont add
+    ## and let resolve to external ip. otherwise add domains
+    ## that are set to listen on ssl as well
+    if instance.has_key? "ssl" and instance["ssl"].size > 0
+      instance["ssl"].each do |ssl|
+        if ssl["staticIP"].empty?
+          ssl["domains"].each do |domain|
+            domains_hosted << domain
+          end
+        end
+      end
+    else
+      unless instance["primaryDomain"].empty?
+        domains_hosted << instance["primaryDomain"]
+      end
+      instance["domains"].each do |domain|
+        domains_hosted << domain
+      end
+    end
+  end
+
+  domains_hosted.uniq
+end
+
+def get_database_data(apps)
+  database_data  = []
+
+  apps.each do |app|
+    instance = app["instance"]
+    next if instance.nil?
+
+    if instance.has_key? "database"
+      case instance["database"]["type"]
+      when "mysql"
+        mysql_db = instance["database"]
+        mysql_failed_validate = false
+        ["name", "username", "password"].each do |arg_name|
+          arg = mysql_db[arg_name]
+          mysql_failed_validate = true if arg.nil? || arg.empty?
+        end
+        unless mysql_failed_validate and not ['development'].include?($stage)
+          database_data << mysql_db
+        end
+      else
+        database_data << instance["database"]
+      end
+    end
+  end
+
+  database_data
+end
+
+def get_htpasswd_data(apps)
+  htpasswd_users = []
+
+  apps.each do |app|
+    instance = app["instance"]
+    next if instance.nil?
+
+    if instance.has_key? "htpasswdUsers"
+      instance["htpasswdUsers"].each do |htpasswd|
+        htpasswd_users << htpasswd
+      end
+    end
+  end
+
+  htpasswd_users
+end
+
+# ansible writes the arguments to a file, get the file name
+args_file = ARGV[0]
+
+# read the data from the file and run shellsplit on it
+args_raw = File.read(args_file).shellsplit
+
+# parse the data as if it were a query string - should preserve quotes
+# and nested args, should we need them
+args = Rack::Utils.parse_nested_query(args_raw.join("&"))
+
+# set global vars from arguments
+$key         = args["key"]
+$application = args["application"]
+$host        = args["host"]
+$stage       = args["stage"]
+
+["$key", "$application", "$host", "$stage"].each do |arg_name|
+  arg = eval(arg_name)
+  if arg.nil?
+    fail "required argument '#{arg_name.gsub("$","")}' missing!"
+  end
+end
+
+# get all projects - we'll filter later if we only need one
+api = API.new($key)
+applications = api.projects
+
+# pull in custom json files and add to applications, if any exist
+custom_json_path = "/opt/ansible/inventory/custom/*.json"
+Dir.glob(custom_json_path).each do |custom_json_file|
+  # parse json data
+  data = JSON.parse(File.read(custom_json_file))
+
+  # if custom.json data exists in data from ghetto, and
+  # this is a development environment, delete that data
+  # from applications so that custom inventories can overwrite
+  # it. allows testing locally without having to make API changes
+  if $stage == 'development'
+    applications.delete_if {|a| a["name"] == data["name"]}
+    $logger.info "overwriting custom inventory for #{data["name"]}!"
+  end
+
+  # add the custom inventory data to applications
+  applications << data
+end
+
+# parse each app, and add a property called 'instance'
+# containing just data needed for that host and for that stage
+applications = add_instance_property(applications)
+
+# domain data should be returned for all applications regardless of
+# whether or not a specific application is requested
+domains_hosted = get_domains_hosted(applications)
+
+# filter down to just the application specified, if one was specified
+unless $application == "all"
+  applications.reject! { |app| app["name"] != $application }
+end
+
+# pull out the database data needed for this host and stage
+database_data = get_database_data(applications)
+
+# pull out htpasswd user data needed for this host and stage
+htpasswd_users = get_htpasswd_data(applications)
+
+# return the output that includes applications as ansible_facts
+output = {
+  'failed' => 0,
+  'msg' => "OK",
+  'ansible_facts' => {
+    'applications'         => applications.sort_by { |a| a["name"] },
+    'dnsmasqDomainsHosted' => domains_hosted.sort,
+    'mysqlAppsUsersData'   => database_data.sort_by { |a| a["name"] },
+    'nginxHtpasswdUsers'   => htpasswd_users.sort_by { |a| a["username"] }
+  }
+}
+
+puts JSON.dump(output)

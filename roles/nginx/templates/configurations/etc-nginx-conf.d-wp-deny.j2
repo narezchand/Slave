@@ -1,0 +1,9 @@
+  ## deny requests for php files in media directories
+  location ~* /(?:uploads|files)/.*\.php$ {
+    return 444;
+  }
+
+  ## deny requests for configuration and meta files
+  location ~* (wp-config.php|readme.html|license.txt) {
+    return 444;
+  }

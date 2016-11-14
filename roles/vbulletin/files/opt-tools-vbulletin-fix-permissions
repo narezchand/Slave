@@ -1,0 +1,25 @@
+#!/usr/local/bin/ruby
+
+require 'rubygems'
+require 'sshkit'
+require 'sshkit/dsl'
+require_relative '../permissions/main.rb'
+
+include Permissions
+
+SSHKit.config.output_verbosity = :warn
+
+## read application name
+application = ARGV[0]
+
+## writable directories - quoted
+writables = %w{
+
+}
+
+## executables - unquoted
+executables = %w{
+
+}
+
+fix! application, writables, executables

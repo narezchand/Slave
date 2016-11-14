@@ -1,0 +1,52 @@
+---
+- name: add holland backup apt key
+  apt_key: >
+    url=http://download.opensuse.org/repositories/home:/holland-backup/xUbuntu_12.04/Release.key state=present
+
+- name: add holland backup package sources
+  apt_repository: >
+    repo='deb http://download.opensuse.org/repositories/home:/holland-backup/xUbuntu_12.04/ ./' state=present
+
+## see http://ansible.cc/docs/modules.html#apt-key notes
+- name: remove deb-src for holland backup repo
+  lineinfile: >
+    state=absent
+    regexp="^deb-src http://download.opensuse.org/repositories/home:/holland-backup/xUbuntu_12.04/ ./"
+    dest=/etc/apt/sources.list
+
+- name: install holland packages
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - holland
+    - holland-common
+    - holland-mysqldump
+
+- name: add /etc/holland/holland.conf
+  copy: >
+    src=etc-holland-holland.conf
+    dest=/etc/holland/holland.conf
+    owner=root group=root mode=0644
+
+- name: add /etc/holland/backupsets/default.conf
+  copy: >
+    src=etc-holland-backupsets-default.conf
+    dest=/etc/holland/backupsets/default.conf
+    owner=root group=root mode=0640
+
+- name: add /etc/holland/providers/mysqldump.conf
+  copy: >
+    src=etc-holland-providers-mysqldump.conf
+    dest=/etc/holland/providers/mysqldump.conf
+    owner=root group=root mode=0640
+
+- name: add /etc/logrotate.d/holland
+  copy: >
+    src=etc-logrotate.d-holland
+    dest=/etc/logrotate.d/holland
+    owner=root group=root mode=0644
+
+- name: add /etc/cron.daily/a-holland
+  copy: >
+    src=etc-cron.daily-a-holland
+    dest=/etc/cron.daily/a-holland
+    owner=root group=root mode=0755

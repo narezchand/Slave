@@ -1,0 +1,10 @@
+---
+- name: add available cron jobs
+  cron: >
+    name="{{ item.name }}" job="{{ item.job }}"
+    user={{ item.user }} state={{ item.state }}
+    minute="{{ item.minute }}" hour="{{ item.hour }}" day="{{ item.day }}"
+    month="{{ item.month }}" weekday="{{ item.weekday }}"
+  with_items: setupCronJobs
+  tags:
+    - setup:cron

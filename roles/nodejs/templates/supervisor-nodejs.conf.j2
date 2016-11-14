@@ -1,0 +1,16 @@
+[program:{{ item.name }}]
+directory=/var/www/{{ item.name }}/htdocs/current
+user=robot
+command={{ item.instance.nodeExecCommand }}
+priority=999
+autostart=true
+autorestart=true
+{% if item.instance.nodeEnvVariables is defined %}
+environment=
+{%- for envVar in item.instance.nodeEnvVariables %}
+{{ envVar.variable }}='{{ envVar.value }}',
+{%- endfor %}
+{% endif %}
+
+stderr_logfile=/var/log/supervisor/{{ item.name }}.stderr.log
+stdout_logfile=/var/log/supervisor/{{ item.name }}.stdout.log

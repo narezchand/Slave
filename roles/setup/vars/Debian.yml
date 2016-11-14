@@ -1,0 +1,5 @@
+---
+# variables specific to Debian
+
+# installs npm from lucid on debian systems
+setupNPMPackageSource: lucid

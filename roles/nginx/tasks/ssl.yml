@@ -1,0 +1,22 @@
+---
+- name: add /etc/nginx/ssl SSL certificates
+  template: >
+    src=etc-nginx-ssl-site.crt.j2
+    dest=/etc/nginx/ssl/{{ item.name }}.crt
+    owner=root group=root mode=0600
+  with_items: nginxSSLData
+  when: nginxSSLData is defined
+  notify: nginx reload
+  tags:
+    - nginx:ssl
+
+- name: add /etc/nginx/ssl SSL keys
+  template: >
+    src=etc-nginx-ssl-site.key.j2
+    dest=/etc/nginx/ssl/{{ item.name }}.key
+    owner=root group=root mode=0600
+  with_items: nginxSSLData
+  when: nginxSSLData is defined
+  notify: nginx reload
+  tags:
+    - nginx:ssl

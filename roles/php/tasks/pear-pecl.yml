@@ -1,0 +1,43 @@
+---
+- name: check existing pear packages
+  shell: pear list -a
+  register: phpInstalledPackages
+  changed_when: False
+  tags:
+    - php:pear-pecl
+
+- name: set pear auto_discover to 1
+  shell: pear config-set auto_discover 1
+  changed_when: False
+  tags:
+    - php:pear-pecl
+
+- name: install pear packages
+  shell: >
+    pear install {{ item.channel }}/{{ item.package }}
+  with_items: phpPearPackages
+  when: >
+    phpPearPackages and
+    "{{ item.package }}" not in phpInstalledPackages.stdout
+  tags:
+    - php:pear-pecl
+
+- name: discover pecl channels
+  shell: >
+    pecl channel-discover {{ item.channel }}
+  with_items: phpPeclPackages
+  when: >
+    phpPeclPackages and
+    "{{ item.channel|upper }}" not in phpInstalledPackages.stdout
+  tags:
+    - php:pear-pecl
+
+- name: install pecl packages
+  shell: >
+    pecl install channel://{{ item.channel }}/{{ item.package }}
+  with_items: phpPeclPackages
+  when: >
+    phpPeclPackages and
+    "{{ item.package }}" not in phpInstalledPackages.stdout
+  tags:
+    - php:pear-pecl

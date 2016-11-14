@@ -1,0 +1,16 @@
+---
+- name: add /etc/supervisor/conf.d/ configurations
+  template: >
+    src=etc-supervisor-conf.d-app.conf.j2
+    dest=/etc/supervisor/conf.d/{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: supervisorJobs
+  notify: restart supervisor instances
+
+- name: add /etc/supervisor/conf.d/ group configurations
+  template: >
+    src=etc-supervisor-conf.d-app-group.conf.j2
+    dest=/etc/supervisor/conf.d/app-{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: supervisorGroups
+  notify: restart supervisor instances

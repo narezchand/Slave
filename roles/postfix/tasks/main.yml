@@ -1,0 +1,33 @@
+---
+- name: install postfix packages
+  apt: pkg=postfix state=installed update_cache=yes cache_valid_time=86400
+
+- name: add /etc/aliases
+  copy: >
+    src=etc-aliases
+    dest=/etc/aliases
+    owner=root group=root mode=0644
+  notify:
+    - postfix newaliases
+    - postmap canonical
+    - postfix restart
+
+- name: add /etc/postfix/main.cf
+  template: >
+    src=etc-postfix-main.cf.j2
+    dest=/etc/postfix/main.cf
+    owner=root group=root mode=0644
+  notify: postfix restart
+
+- name: add /etc/postfix/canonical
+  template: >
+    src=etc-postfix-canonical.j2
+    dest=/etc/postfix/canonical
+    owner=root group=root mode=0644
+  notify:
+    - postmap canonical
+    - postfix restart
+
+- name: ensure postfix started
+  service: name=postfix state=started enabled=yes
+  ignore_errors: True

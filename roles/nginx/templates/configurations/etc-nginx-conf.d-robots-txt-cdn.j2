@@ -1,0 +1,17 @@
+  location = /robots.txt {
+    ## if request is from CDN, perform an internal rewrite to a different location
+    ## block that will change the root and serve a blocking robots.txt
+    if ($request_is_from_netdna_cdn) {
+      rewrite ^(.*)$ /--cdn-robots-txt-- last;
+    }
+
+    access_log off;
+    try_files /robots.txt /?q=$uri;
+  }
+
+  location = /--cdn-robots-txt-- {
+    access_log off;
+    root /var/www/common;
+
+    try_files /robots.txt =404;
+  }

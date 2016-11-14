@@ -1,0 +1,68 @@
+---
+- name: purge previous ruby packages
+  apt: >
+    pkg={{ item }} state=absent purge=yes
+  with_items:
+    - libruby1.8
+    - libruby1.9.1
+    - ruby1.9.1
+    - ruby1.9.1-dev
+    - vim-nox
+  tags:
+    - setup:ruby
+
+- name: check if ruby installed
+  shell: >
+    dpkg --get-selections | awk '{print $1}' | grep "^ruby$"
+  register: noRubyInstalled
+  ignore_errors: True
+  changed_when: False
+  tags:
+    - setup:ruby
+
+- name: get custom built ruby package
+  get_url: >
+    url=https://voce-packages.s3.amazonaws.com/ruby_2.0.0-p353~{{ ansible_lsb.codename }}_amd64.deb
+    dest=/usr/local/src/ruby_2.0.0-p353~{{ ansible_lsb.codename }}_amd64.deb
+    owner=root group=root mode=0600
+  when: noRubyInstalled.rc != 0
+  tags:
+    - setup:ruby
+
+- name: install custom built ruby package
+  shell: >
+    chdir=/usr/local/src dpkg -i ruby_2.0.0-p353~{{ ansible_lsb.codename }}_amd64.deb
+  when: noRubyInstalled.rc != 0
+  tags:
+    - setup:ruby
+
+- name: mark ruby packages for 'hold'
+  shell: >
+    echo "ruby hold" | dpkg --set-selections
+  changed_when: False
+  tags:
+    - setup:ruby
+
+- name: add /root/.gemrc
+  copy: >
+    src=root-dot-gemrc
+    dest=/root/.gemrc
+    owner=root group=root mode=0644
+  tags:
+    - setup:ruby
+
+- name: install group specific ruby gems
+  gem: >
+    name={{ item }} state=present user_install=no
+  with_items: setupRubyGroupGems
+  ignore_errors: True
+  tags:
+    - setup:ruby
+
+- name: install host specific ruby gems
+  gem: >
+    name={{ item }} state=present user_install=no
+  with_items: setupRubyHostGems
+  ignore_errors: True
+  tags:
+    - setup:ruby

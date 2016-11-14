@@ -1,0 +1,53 @@
+---
+- name: add dotdeb apt key
+  apt_key: >
+    url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7E3F070089DF5277 state=present
+
+- name: add dotdeb package sources
+  apt_repository: >
+    repo='deb http://packages.dotdeb.org {{ item }} all' state=present
+  with_items: phpPackageSources
+
+- name: package pin dotdeb to only needed packages
+  template: >
+    src=etc-apt-preferences.d-dotdeb-php.j2
+    dest=/etc/apt/preferences.d/dotdeb-php
+    owner=root group=root mode=0644
+
+- name: install php packages
+  apt: >
+    pkg={{ item }} state=installed
+  with_items: phpInstallPackages
+
+- name: add /etc/php5/mods-available configurations
+  copy: >
+    src=etc-php5-mods-available/
+    dest=/etc/php5/mods-available/
+    owner=root group=root mode=0644
+  notify: php5-fpm reload
+
+- name: add /etc/php5/mods-available/opcache.ini
+  template: >
+    src=etc-php5-mods-available-opcache.ini.j2
+    dest=/etc/php5/mods-available/opcache.ini
+    owner=root group=root mode=0644
+  notify: php5-fpm reload
+
+- name: add /etc/php5/mods-available/xdebug.ini
+  template: >
+    src=etc-php5-mods-available-xdebug.ini.j2
+    dest=/etc/php5/mods-available/xdebug.ini
+    owner=root group=root mode=0644
+  notify: php5-fpm reload
+  when: >
+    'php5-xdebug' in phpInstallPackages
+
+- include: cli.yml
+- include: composer.yml
+- include: fpm.yml
+  when: phpFPMEnabled
+
+- include: phpunit.yml
+- include: pear-pecl.yml
+- include: newrelic.yml
+  when: phpNewRelicLicenseKey and phpNewRelicLicenseKey is string

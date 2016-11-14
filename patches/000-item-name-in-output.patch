@@ -1,0 +1,61 @@
+--- callbacks.py    2014-08-18 14:30:54.000000000 -0400
++++ callbacks.py    2014-08-18 14:37:35.000000000 -0400
+@@ -456,7 +456,10 @@
+         if type(results) == dict:
+             item = results.get('item', None)
+         if item:
+-            msg = "fatal: [%s] => (item=%s) => %s" % (host, item, results)
++            if 'name' in item:
++                msg = "fatal: [%s] => (item=%s) => %s" % (host, item['name'], results)
++            else:
++                msg = "fatal: [%s] => (item=%s) => %s" % (host, item, results)
+         else:
+             msg = "fatal: [%s] => %s" % (host, results)
+         display(msg, color='red', runner=self.runner)
+@@ -480,7 +483,10 @@
+         returned_msg = results2.pop('msg', None)
+
+         if item:
+-            msg = "failed: [%s] => (item=%s) => %s" % (host, item, utils.jsonify(results2))
++            if 'name' in item:
++                msg = "failed: [%s] => (item=%s) => %s" % (host, item['name'], utils.jsonify(results2))
++            else:
++                msg = "failed: [%s] => (item=%s) => %s" % (host, item, utils.jsonify(results2))
+         else:
+             msg = "failed: [%s] => %s" % (host, utils.jsonify(results2))
+         display(msg, color='red', runner=self.runner)
+@@ -517,14 +523,20 @@
+         if (not self.verbose or host_result2.get("verbose_override",None) is not
+                 None) and not verbose_always:
+             if item:
+-                msg = "%s: [%s] => (item=%s)" % (ok_or_changed, host, item)
++                if 'name' in item:
++                    msg = "%s: [%s] => (item=%s)" % (ok_or_changed, host, item['name'])
++                else:
++                    msg = "%s: [%s] => (item=%s)" % (ok_or_changed, host, item)
+             else:
+                 if 'ansible_job_id' not in host_result or 'finished' in host_result:
+                     msg = "%s: [%s]" % (ok_or_changed, host)
+         else:
+             # verbose ...
+             if item:
+-                msg = "%s: [%s] => (item=%s) => %s" % (ok_or_changed, host, item, utils.jsonify(host_result2, format=verbose_always))
++                if 'name' in item:
++                    msg = "%s: [%s] => (item=%s) => %s" % (ok_or_changed, host, item['name'], utils.jsonify(host_result2, format=verbose_always))
++                else:
++                    msg = "%s: [%s] => (item=%s) => %s" % (ok_or_changed, host, item, utils.jsonify(host_result2, format=verbose_always))
+             else:
+                 if 'ansible_job_id' not in host_result or 'finished' in host_result2:
+                     msg = "%s: [%s] => %s" % (ok_or_changed, host, utils.jsonify(host_result2, format=verbose_always))
+@@ -544,7 +556,10 @@
+         if constants.DISPLAY_SKIPPED_HOSTS:
+             msg = ''
+             if item:
+-                msg = "skipping: [%s] => (item=%s)" % (host, item)
++                if 'name' in item:
++                    msg = "skipping: [%s] => (item=%s)" % (host, item['name'])
++                else:
++                    msg = "skipping: [%s] => (item=%s)" % (host, item)
+             else:
+                 msg = "skipping: [%s]" % host
+             display(msg, color='cyan', runner=self.runner)

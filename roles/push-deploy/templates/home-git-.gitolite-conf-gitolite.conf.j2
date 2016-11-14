@@ -1,0 +1,49 @@
+## {{ ansible_managed }}
+## main group - everyone exists within this group
+@platforms = {% for user in pushDeployUsers %}{{ user.username }} {% endfor %}
+
+{% if pushDeployAdmins %}
+## users that can read, write and push -f
+@admins = {{ pushDeployAdmins|join(' ') }}
+{% endif %}
+
+{% if pushDeployProduction %}
+## users that can write to production remotes
+@production = {{ pushDeployProduction|join(' ') }}
+{% endif %}
+
+{% if pushDeployUAT %}
+## users that can write to uat remotes
+@uat = {{ pushDeployUAT|join(' ') }}
+{% endif %}
+
+{% if pushDeployStaging %}
+## users that can write to staging remotes
+@staging = {{ pushDeployStaging|join(' ') }}
+{% endif %}
+
+## main gitolite-admin repo
+## shouldn't be needed since this is managed through ansible, but just in
+## case of emergency, the hosted git user can 'fix' and push into this...
+## also see: http://gitolite.com/gitolite/rules.html#rule-accum for details
+## about how these rules work
+repo gitolite-admin
+    RW+ = id_rsa     # hosted git user
+    RW+ = @admins
+    -   = @platforms
+    option deny-rules = 1
+
+repo testing
+    RW+ = id_rsa     # hosted git user
+    RW+ = @admins
+    -   = @platforms
+    option deny-rules = 1
+
+## permissions for all repos
+repo @all
+    RW+ = id_rsa     # hosted git user
+    RW+ = @admins
+    R   = @platforms
+
+## include sites...
+include "sites/*.conf"

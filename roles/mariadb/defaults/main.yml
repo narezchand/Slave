@@ -1,0 +1,41 @@
+---
+# default vars - can apply to any OS
+
+# which packages should be installed
+mysqlPackages:
+  - mariadb-server
+  - python-mysqldb
+
+# which packages considered tools for mysql to install
+mysqlToolPackages:
+  - libmariadbclient-dev
+  - mytop
+  - mysqltuner
+  - percona-xtrabackup
+  - percona-toolkit
+  - percona-nagios-plugins
+  - socat
+
+# default username for mysql root user
+mysqlRootUsername: _root
+
+# default password for mysql root user
+mysqlRootPassword: "spam32"
+
+# username for the debian system maintenance user
+mysqlDebianSysMaintUser: "debian-sys-maint"
+
+# password for the debian system maintenance account
+# be sure to change this in a host or group level var!
+mysqlDebianSysMaintPass: "spam32"
+
+# should a supervisor controlled instance of pt-kill be added?
+mysqlKillLongRunningQueries: false
+
+# which configuration file to use, defaults to a configuration
+# that matches the amount of total memory for the system
+mysqlConfiguration: "{{ ansible_memtotal_mb }}"
+
+# mysql server id (used for replication)
+# 100 is used for first master
+mysqlServerID: 101

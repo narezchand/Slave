@@ -1,0 +1,6 @@
+---
+- name: nginx reload
+  service: name=nginx state=reloaded enabled=yes
+
+- name: rsyslog restart
+  service: name=rsyslog state=restarted

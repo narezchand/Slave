@@ -1,0 +1,23 @@
+---
+- name: check if /usr/local/bin/composer exists
+  shell: >
+    command -v composer > /dev/null 2>&1
+  ignore_errors: True
+  changed_when: False
+  register: phpComposerNotInstalled
+  tags:
+    - php:composer
+
+- name: install /usr/local/bin/composer
+  shell: >
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin
+  when: phpComposerNotInstalled.rc != 0
+  tags:
+    - php:composer
+
+- name: rename composer.phar
+  shell: >
+    mv /usr/local/bin/composer.phar /usr/local/bin/composer
+  when: phpComposerNotInstalled.rc != 0
+  tags:
+    - php:composer

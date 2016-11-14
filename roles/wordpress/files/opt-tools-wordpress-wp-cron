@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APPLICATIONS=()
+ERRORS=()
+
+function join {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
+function retrieve_applications() {
+  for app in $(/bin/ls -1 /var/www); do
+    if [[ -f "/var/www/${app}/htdocs/current/wp-config.php" ]]; then
+      APPLICATIONS+=("${app}")
+    fi
+  done
+}
+
+function execute_wp_cron() {
+  for app in "${APPLICATIONS[@]}"; do
+    cd "/var/www/${app}/htdocs/current" && \
+    /usr/local/bin/wp \
+      --allow-root \
+      --quiet \
+      --no-color \
+      --path="${PWD}/wp" \
+      --require=/opt/tools/wordpress/silence.php \
+      cron test || \
+    ERRORS+=("${app}")
+  done
+}
+
+function print_errors() {
+  if [[ ${#ERRORS[@]} -ne 0 ]]; then
+    echo -n "wp cron errors for: "
+    join ", " "${ERRORS[@]}"
+    exit 1
+  fi
+}
+
+retrieve_applications
+execute_wp_cron
+print_errors

@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+# pin all packages from dotdeb to a lower priority...
+Package: *
+Pin: release l=packages.dotdeb.org
+Pin-Priority: 400
+
+{% for source in phpPackageSources %}
+Package: php5*
+Pin: release n={{ source }}
+Pin-Priority: 600
+
+Package: libmemcached*
+Pin: release n={{ source }}
+Pin-Priority: 600
+{% endfor %}

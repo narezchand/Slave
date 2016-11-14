@@ -1,0 +1,36 @@
+---
+- name: add mongodb apt key
+  apt_key: >
+    keyserver=keyserver.ubuntu.com id=7F0CEB10 state=present
+
+- name: add mongodb package sources
+  apt_repository: >
+    repo='deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen' state=present
+
+## see http://ansible.cc/docs/modules.html#apt-key notes
+- name: remove deb-src for 10gen repo
+  lineinfile: >
+    state=absent
+    regexp="^deb-src http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen"
+    dest=/etc/apt/sources.list
+
+- name: install mongodb packages
+  apt: pkg=mongodb-10gen state=installed
+
+- name: add /etc/mongodb.conf
+  template: >
+    src=etc-mongodb.conf.j2
+    dest=/etc/mongodb.conf
+    owner=root group=root mode=0644
+  notify: mongodb restart
+
+- name: add /etc/cron.daily/mongodump
+  copy: >
+    src=etc-cron.daily-mongodump
+    dest=/etc/cron.daily/mongodump
+    owner=root group=root mode=0755
+
+- name: ensure directory /var/spool/mongodb
+  file: >
+    path=/var/spool/mongodb state=directory
+    owner=root group=root mode=0755

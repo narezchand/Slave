@@ -1,0 +1,53 @@
+---
+- name: add dotdeb apt key for updated redis-server
+  apt_key: >
+    url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7E3F070089DF5277 state=present
+
+- name: add dotdeb package sources for updated redis-server
+  apt_repository: >
+    repo='deb http://packages.dotdeb.org wheezy all' state=present
+
+- name: package pin dotdeb to only redis-server
+  copy: >
+    src=etc-apt-preferences.d-dotdeb-redis-server
+    dest=/etc/apt/preferences.d/dotdeb-redis-server
+    owner=root group=root mode=0644
+
+- name: install redis-server package
+  apt: pkg=redis-server state=installed update_cache=yes cache_valid_time=86400
+
+- name: stop main redis-server instance
+  service: name=redis-server state=stopped
+
+- name: remove redis-server from default run levels
+  shell: update-rc.d -f redis-server remove
+  changed_when: False
+
+- name: remove default redis.conf
+  file: path=/etc/redis/redis.conf state=absent
+
+- name: add /etc/supervisor/conf.d/redis-group.conf
+  template: >
+    src=etc-supervisor-conf.d-redis-group.conf.j2
+    dest=/etc/supervisor/conf.d/redis-group.conf
+    owner=root group=root mode=0644
+  when: >
+    redisInstances is defined and
+    redisInstances|count > 1
+  notify: restart redis instances
+
+- name: add /etc/supervisor/conf.d instance configs
+  template: >
+    src=etc-supervisor-conf.d-redis-instance.conf.j2
+    dest=/etc/supervisor/conf.d/redis-{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: redisInstances
+  notify: restart redis instances
+
+- name: add /etc/redis instance configs
+  template: >
+    src=etc-redis-instance.conf.j2
+    dest=/etc/redis/{{ item.name }}.conf
+    owner=root group=root mode=0644
+  with_items: redisInstances
+  notify: restart redis instances

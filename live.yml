@@ -1,0 +1,165 @@
+---
+- name: setup...
+  hosts: all
+  sudo: True
+  roles:
+    - { role: 'setup', tags: [ 'setup' ] }
+
+- name: provision common server requirements...
+  hosts: all
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - dnsmasq
+  roles:
+    - { role: 'backups', tags: [ 'backups' ], when: backupsEnabled }
+    - { role: 'postfix', tags: [ 'postfix' ] }
+    - { role: 'fail2ban', tags: [ 'fail2ban' ] }
+    - { role: 'dnsmasq', tags: [ 'dnsmasq' ] }
+
+- name: provision database servers...
+  hosts: database
+  sudo: True
+  roles:
+    - { role: 'mariadb', tags: [ 'mariadb' ] }
+
+- name: provision database master servers...
+  hosts: database_master
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - mysql-apps-users
+  roles:
+    - { role: 'mysql-apps-users', tags: [ 'mysql-apps-users' ] }
+
+- name: provision database backup servers...
+  hosts: database_backup
+  sudo: True
+  roles:
+    - { role: 'mysql-backups', tags: [ 'mysql-backups' ] }
+
+- name: provision sphinx SQL search servers...
+  hosts: sphinx
+  sudo: True
+  roles:
+    - { role: 'sphinx', tags: [ 'sphinx' ] }
+
+- name: provision memcached servers...
+  hosts: memcached
+  sudo: True
+  roles:
+    - { role: 'memcached', tags: [ 'memcached' ] }
+
+- name: provision redis servers...
+  hosts: redis
+  sudo: True
+  roles:
+    - { role: 'redis', tags: [ 'redis' ] }
+
+- name: provision mongodb servers...
+  hosts: mongodb
+  sudo: True
+  roles:
+    - { role: 'mongodb', tags: [ 'mongodb' ] }
+
+- name: provision glusterfs servers...
+  hosts: glusterfs
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - glusterfs
+  roles:
+    - { role: 'glusterfs', tags: [ 'glusterfs' ] }
+
+- name: provision nginx servers...
+  hosts: nginx
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - nginx:applications
+        - nginx
+  roles:
+    - { role: 'nginx', tags: [ 'nginx' ] }
+
+- name: provision web servers...
+  hosts: web
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - php
+        - php:fpm
+        - wordpress
+        - static
+        - nodejs
+        - vbulletin
+  roles:
+    - { role: 'php', tags: [ 'php' ] }
+    - { role: 'wordpress', tags: [ 'wordpress' ] }
+    - { role: 'static', tags: [ 'static' ] }
+    - { role: 'nodejs', tags: [ 'nodejs' ] }
+    - { role: 'vbulletin', tags: [ 'vbulletin' ] }
+
+- name: provision supervisord configurations...
+  hosts: supervisor_jobs
+  sudo: True
+  roles:
+    - { role: 'supervisor-jobs', tags: [ 'supervisor-jobs' ] }
+
+- name: configure and deploy packagist servers...
+  hosts: packagist
+  sudo: True
+  roles:
+    - { role: 'packagist', tags: [ 'packagist' ] }
+
+- name: configure and deploy 'git-push-to-deploy' servers...
+  hosts: push_deploy
+  sudo: True
+  pre_tasks:
+    - name: retrieve project facts from ghetto...
+      ghetto_facts: >
+        key={{ ghettoAPIKey }}
+        application={{ application|default('all') }}
+        host={{ ansible_fqdn }}
+        stage={{ stage }}
+      tags:
+        - client:provision
+        - push-deploy
+        - push-deploy:configs
+  roles:
+    - { role: 'push-deploy', tags: [ 'push-deploy' ] }
+    - { role: 'pantheon', tags: [ 'pantheon' ] }

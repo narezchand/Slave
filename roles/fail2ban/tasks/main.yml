@@ -1,0 +1,121 @@
+---
+- name: install fail2ban dependencies
+  apt: >
+    pkg={{ item }} state=installed
+  with_items:
+    - python
+    - python-central
+    - lsb-base
+    - sqlite3
+
+- name: check if fail2ban exists in PATH
+  shell: >
+    command -v fail2ban-client > /dev/null 2>&1
+  ignore_errors: True
+  register: fail2banInstalled
+  changed_when: False
+
+- name: get fail2ban
+  get_url: >
+    url=https://github.com/fail2ban/fail2ban/archive/{{ fail2banVersion }}.zip
+    dest=/usr/local/src/fail2ban-{{ fail2banVersion }}.zip
+  when: >
+    fail2banInstalled.rc != 0
+
+- name: extract fail2ban
+  shell: >
+    chdir=/usr/local/src
+    unzip fail2ban-{{ fail2banVersion }}.zip
+  when: >
+    fail2banInstalled.rc != 0
+
+- name: install fail2ban
+  shell: >
+    chdir=/usr/local/src/fail2ban-{{ fail2banVersion }}
+    python setup.py install
+  when: >
+    fail2banInstalled.rc != 0
+
+- name: add /etc/init.d/fail2ban
+  copy: >
+    src=etc-init.d-fail2ban
+    dest=/etc/init.d/fail2ban
+    owner=root group=root mode=0755
+  when: ansible_distribution == 'Debian'
+
+- name: add /etc/init/fail2ban.conf
+  copy: >
+    src=etc-init-fail2ban.conf
+    dest=/etc/init/fail2ban.conf
+    owner=root group=root mode=0644
+  when: ansible_distribution == 'Ubuntu'
+
+- name: symlink /lib/init/upstart-job to /etc/init.d/fail2ban
+  file: >
+    src=/lib/init/upstart-job
+    dest=/etc/init.d/fail2ban
+    owner=root group=root state=link
+  when: ansible_distribution == 'Ubuntu'
+
+- name: set dbpurgeage in /etc/fail2ban/fail2ban.conf
+  lineinfile: >
+    dest=/etc/fail2ban/fail2ban.conf
+    regexp="^dbpurgeage \= (.+)"
+    line='dbpurgeage = 31536000'
+    state=present
+
+- name: add /etc/logrotate.d/fail2ban
+  copy: >
+    src=etc-logrotate.d-fail2ban
+    dest=/etc/logrotate.d/fail2ban
+    owner=root group=root mode=0644
+
+- name: ensure /var/log/fail2ban.log exists
+  shell: >
+    touch /var/log/fail2ban.log
+  changed_when: False
+
+- name: set permissions on /var/log/fail2ban.log
+  file: >
+    path=/var/log/fail2ban.log
+    state=file owner=root group=adm mode=0640
+
+- name: add /etc/fail2ban/jail.local
+  template: >
+    src=etc-fail2ban-jail.local.j2
+    dest=/etc/fail2ban/jail.local
+    owner=root group=root mode=0644
+  notify:
+    - fail2ban restart
+
+- name: add /etc/fail2ban/action.d action files
+  copy: >
+    src=etc-fail2ban-action.d/
+    dest=/etc/fail2ban/action.d/
+    owner=root group=root mode=0644
+  notify:
+    - fail2ban restart
+
+- name: add /etc/fail2ban/filter.d filter files
+  copy: >
+    src=etc-fail2ban-filter.d/
+    dest=/etc/fail2ban/filter.d/
+    owner=root group=root mode=0644
+  notify:
+    - fail2ban restart
+
+- name: ensure directiory /root/bin exists
+  file: >
+    path=/root/bin state=directory
+    owner=root group=root mode=2700
+  when: fail2banRackspaceConfig.apikey is defined
+
+- name: add /root/bin/rackban.php
+  template: >
+    src=root-bin-rackban.php.j2
+    dest=/root/bin/rackban.php
+    owner=root group=root mode=0600
+  when: fail2banRackspaceConfig.apikey is defined
+
+- name: ensure fail2ban running
+  service: name=fail2ban state=started enabled=yes

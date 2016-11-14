@@ -1,0 +1,107 @@
+---
+- hosts: uat.lde.atl.voceplatforms.com
+  sudo: True
+  vars:
+    app: "{{ application|replace('-','') }}"
+  tasks:
+    - name: create temporary directory
+      file: >
+        path=/tmp/{{ app }}-db
+        state=directory mode=0777
+
+    - name: export database to temporary directory
+      shell: >
+        mysqldump --tab=/tmp/{{ app }}-db --opt --single-transaction --quick {{ app }}
+
+    - name: compress database export
+      shell: >
+        chdir=/tmp/{{ app }}-db
+        tar -czf /root/{{ app }}-db.tar.gz .
+
+    - name: scp database export to staging
+      shell: >
+        scp /root/{{ app }}-db.tar.gz root@stage:
+
+    - name: remove database export
+      file: >
+        path=/root/{{ app }}-db.tar.gz
+        state=absent
+
+    - name: remove temporary directory
+      file: >
+        path=/tmp/{{ app }}-db
+        state=absent
+
+- hosts: stage.lde.atl.voceplatforms.com
+  sudo: True
+  vars:
+    app: "{{ application|replace('-','') }}"
+  tasks:
+    - name: create temporary directory
+      file: >
+        path=/tmp/{{ app }}-db
+        state=directory mode=0777
+
+    - name: move database export to temporary directory
+      shell: >
+        mv /root/{{ app }}-db.tar.gz /tmp/{{ app }}-db
+
+    - name: extract database export
+      shell: >
+        chdir=/tmp/{{ app }}-db
+        tar -xzf {{ app }}-db.tar.gz
+
+    - name: import database schema
+      shell: >
+        chdir=/tmp/{{ app }}-db
+        cat *.sql | mysql {{ app }}
+
+    - name: import database data
+      shell: >
+        chdir=/tmp/{{ app }}-db
+        mysqlimport --use-threads=3 --local {{ app }} *.txt
+
+    - name: remove temporary directory
+      file: >
+        path=/tmp/{{ app }}-db
+        state=absent
+
+    - name: ensure clone of Search-Replace-DB
+      git: >
+        repo=https://github.com/interconnectit/Search-Replace-DB
+        dest=/root/Search-Replace-DB force=yes update=yes version=master
+
+    - name: get common table names to perform find/replace in
+      shell: >
+        mysql -Bse "SELECT GROUP_CONCAT(table_name SEPARATOR ',') FROM information_schema.tables AS tb WHERE (\`TABLE_TYPE\` = 'BASE TABLE' AND \`TABLE_SCHEMA\` = '{{ app }}') AND (table_name LIKE '%options' OR table_name LIKE '%posts' OR table_name LIKE '%postmeta' OR table_name LIKE '%site' OR table_name LIKE '%sitemeta' OR table_name LIKE '%blogs');"
+      register: findReplaceTables
+
+    - name: execute find/replace of uat domain to staging domain
+      shell: >
+        chdir=/root/Search-Replace-DB
+        /usr/bin/php srdb.cli.php -h 'localhost' -n '{{ app }}'
+        -u '{{ mysqlRootUsername }}' -p '{{ mysqlRootPassword }}'
+        -s '{{ findDomain }}' -r '{{ replaceDomain }}'
+        -t '{{ findReplaceTables.stdout }}'
+      register: findReplace
+
+    - name: restart memcached
+      service: name=memcached state=restarted
+
+- hosts: uat.lde.atl.voceplatforms.com
+  sudo: True
+  tasks:
+    - name: rsync uploads to staging
+      shell: >
+        chdir=/var/www/{{ application }}/htdocs/shared/wp-content/uploads
+        rsync -aC . root@stage:/var/www/{{ application }}/htdocs/shared/wp-content/uploads/
+      when: rsyncAssets|default(False)
+
+- hosts: stage.lde.atl.voceplatforms.com
+  sudo: True
+  tasks:
+    - name: execute fix permissions script
+      shell: >
+        chdir=/opt/tools/wordpress
+        ./fix-permissions {{ application }}
+      when: rsyncAssets|default(False)

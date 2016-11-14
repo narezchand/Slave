@@ -1,0 +1,5 @@
+---
+- name: restart node instances
+  supervisorctl: >
+    name=nodejs:* state=restarted
+  ignore_errors: True

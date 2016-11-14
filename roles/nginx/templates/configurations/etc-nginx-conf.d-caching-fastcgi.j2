@@ -1,0 +1,23 @@
+    ## fastcgi cache settings
+    fastcgi_cache_methods       GET HEAD;
+    fastcgi_cache_key           "$request_method:$normalized_ua:$scheme:$host$request_uri";
+    fastcgi_cache_lock          on;
+    fastcgi_cache_lock_timeout  6s;
+    fastcgi_cache_revalidate    on;
+    fastcgi_cache_use_stale     error timeout invalid_header updating http_500 http_503;
+    fastcgi_ignore_headers      Cache-Control Expires;
+
+    ## cache responses in the short zone unless :
+    ## _output_cache=1 or
+    ## logged_in=1
+    fastcgi_cache             fastcgi_cache;
+    fastcgi_cache_bypass      $_output_cache $logged_in;
+    fastcgi_no_cache          $_output_cache $logged_in;
+
+    ## how to cache various responses
+    fastcgi_cache_valid       200 301 5m;
+    fastcgi_cache_valid       302 307 404 1m;
+
+    ## let the browser know we vary on cookie and encoding
+    more_set_headers          -s '200' "Vary: User-Agent, Accept-Encoding, Cookie";
+    more_set_headers          -s '200 301 302 307 404' "X-Cache-Status: $upstream_cache_status";

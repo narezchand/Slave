@@ -1,0 +1,42 @@
+---
+- hosts: development.voceplatforms.com
+  sudo: True
+  tasks:
+    - name: remove /etc/apt/sources.list.d/packages_dotdeb_org.list
+      file: >
+        path=/etc/apt/sources.list.d/packages_dotdeb_org.list
+        state=absent
+
+    - name: remove /etc/apt/preferences.d/dotdeb-php
+      file: >
+        path=/etc/apt/preferences.d/dotdeb-php
+        state=absent
+
+    - name: purge PHP packages
+      apt: >
+        pkg={{ item }} state=absent purge=yes
+      with_items:
+        - php5-cli
+        - php5-common
+        - php5-curl
+        - php5-dev
+        - php5-fpm
+        - php5-gd
+        - php5-mcrypt
+        - php5-memcache
+        - php5-memcached
+        - php5-mongo
+        - php5-mysqlnd
+        - php5-xdebug
+        - php5-xhprof
+
+    - name: remove various PHP files/directories
+      file: >
+        path={{ item }} state=absent
+      with_items:
+        - /usr/lib/php5
+        - /etc/php5
+        - /var/log/php5*
+        - /usr/share/doc/php5-common
+        - /usr/share/php
+        - /var/cache/apt/archives/php*

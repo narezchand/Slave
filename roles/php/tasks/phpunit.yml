@@ -1,0 +1,19 @@
+---
+- name: check if phpunit already installed
+  shell: >
+    command -v phpunit > /dev/null 2>&1
+  register: phpunitInstalled
+  ignore_errors: True
+  changed_when: False
+  tags:
+    - php:phpunit
+
+- name: retrieve phpunit phar
+  get_url: >
+    url=https://phar.phpunit.de/phpunit.phar
+    dest=/usr/local/bin/phpunit
+    owner=root group=root mode=0755
+  when: >
+    phpunitInstalled.rc != 0
+  tags:
+    - php:phpunit

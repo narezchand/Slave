@@ -1,0 +1,59 @@
+---
+- name: add /home/git/.gitolite/conf/sites
+  file: >
+    path=/home/git/.gitolite/conf/sites state=directory
+    owner=git group=git mode=0775
+  tags:
+    - client:provision
+    - push-deploy:configs
+
+- name: add /home/git/.gitolite/conf/gitolite.conf
+  template: >
+    src=home-git-.gitolite-conf-gitolite.conf.j2
+    dest=/home/git/.gitolite/conf/gitolite.conf
+    owner=git group=git mode=0664
+  notify: gitolite setup
+  tags:
+    - client:provision
+    - push-deploy:configs
+
+- name: add ssh authorized keys for users
+  template: >
+    src=home-git-.gitolite-keydir-user.pub.j2
+    dest=/home/git/.gitolite/keydir/{{ item.username }}.pub
+    owner=git group=git mode=0664
+  with_items: pushDeployUsers
+  notify: gitolite setup
+  tags:
+    - client:provision
+    - push-deploy:configs
+
+- name: add gitolite site configuration files
+  template: >
+    src=home-git-.gitolite-conf-sites-site.conf.j2
+    dest=/home/git/.gitolite/conf/sites/{{ item.name }}.conf
+    owner=git group=git mode=0664
+  with_items: applications
+  when: item.status == "active" and item.instances|length > 0
+  notify: gitolite setup
+  tags:
+    - client:provision
+    - push-deploy:configs
+
+- name: add /home/git/.gitolite/hooks/common/pre-receive
+  copy: >
+    src=home-git-.gitolite-hooks-common-pre-receive
+    dest=/home/git/.gitolite/hooks/common/pre-receive
+    owner=git group=git mode=0775
+  notify: gitolite setup
+  tags:
+    - push-deploy:configs
+
+- name: add /home/git/.gitolite/hooks/common/post-receive
+  copy: >
+    src=home-git-.gitolite-hooks-common-post-receive
+    dest=/home/git/.gitolite/hooks/common/post-receive
+    owner=git group=git mode=0775
+  notify: gitolite setup
+  tags:
+    - push-deploy:configs

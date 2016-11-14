@@ -1,0 +1,59 @@
+---
+- name: install ufw packages
+  apt: pkg=ufw state=installed
+  tags:
+    - setup:firewall
+
+- name: explicitly allow SSH port
+  ufw: >
+    rule=allow port=22 proto=tcp
+  when: setupFirewallAllowSSH
+  tags:
+    - setup:firewall
+
+- name: add /etc/ufw/before.rules
+  template: >
+    src=etc-ufw-before.rules.j2
+    dest=/etc/ufw/before.rules
+    owner=root group=root mode=0640
+  notify: ufw restart
+  tags:
+    - host:discovery
+    - setup:firewall
+
+- name: add host firewall rules
+  ufw: >
+    rule=allow
+    src={{ item.src }}
+    proto={{ item.proto }}
+    port={{ item.port|default('') }}
+  with_items: setupFirewallWhitelist
+  tags:
+    - host:discovery
+    - setup:firewall
+
+- name: disble ipv6 in ufw
+  lineinfile: >
+    dest=/etc/default/ufw
+    regexp="^IPV6\=(.+)"
+    line='IPV6=no'
+    state=present
+  when: setupDisableIPV6
+  notify: ufw restart
+  tags:
+    - setup:firewall
+
+- name: disble IPT_MODULES in ufw
+  lineinfile: >
+    dest=/etc/default/ufw
+    regexp="^(# )?IPT_MODULES\=(.+)"
+    line='# IPT_MODULES="nf_conntrack_ftp nf_nat_ftp nf_conntrack_netbios_ns"'
+    state=present
+  notify: ufw restart
+  tags:
+    - setup:firewall
+
+- name: enable ufw with logging disabled
+  ufw: state=enabled logging=off
+  tags:
+    - setup:firewall

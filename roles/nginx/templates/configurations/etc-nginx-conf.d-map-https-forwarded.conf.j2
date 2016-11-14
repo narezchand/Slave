@@ -1,0 +1,12 @@
+  ## if forwarding for ssl, set https_forwarded
+  map $http_x_forwarded_proto $https_forwarded {
+    default off;
+    https on;
+  }
+
+  ## if forwarding SSL set hsts_header value
+  ## nginx ignores add_header when called with an empty value
+  ## map with no default sets $hsts_header to empty value
+  map $http_x_forwarded_proto $hsts_header {
+    https 'max-age=31536000; includeSubdomains';
+  }

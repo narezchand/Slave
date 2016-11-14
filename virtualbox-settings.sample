@@ -1,0 +1,37 @@
+---
+## define the URL to where the .box file can be downloaded. if desired,
+## the box can be downloaded and saved locally, then referenced as a path to
+## the box file instead of a URL:
+## examples:
+##   http://voce-packages.s3.amazonaws.com/boxes/Ubuntu-12.04.4-server-amd64.box
+##   file:///Users/you/Downloads/Ubuntu-12.04.4-server-amd64.box
+## this shouldn't require changing from the default value UNLESS you want
+## to download the box file and store it locally so that it isn't required
+## to be re-downloaded if you 'vagrant destroy' your VM
+dev_box_url: "http://voce-packages.s3.amazonaws.com/boxes/debian-7.7.0-amd64_virtualbox.box"
+
+## an absolute path to where your projects are stored
+## example:
+##   /Users/you/Projects/wordpress
+dev_project_path: "TODO"
+
+## the amount of RAM in MB (as an integer: 1024) to allocate to your development box
+# recommended: 2048
+dev_ram: TODO
+
+## the number of CPUs (as an integer) to allocate to your development box
+# recommended: 2
+dev_num_cpu: TODO
+
+## a cap (specified as an integer percentage out of 100) that CPUs should not
+## be allowed to consume more than for the development box...
+# recommended: 100
+dev_cpu_cap: TODO
+
+## If you have other custom tld's for Vagrant to resolve other than dev, add them here
+# dev_dns_tlds:
+#	- test
+
+## If you have other custom dns patterns for Vagrant to resolve other than the defaults
+# dev_dns_patterns:
+#	- '^.*staging.test$'

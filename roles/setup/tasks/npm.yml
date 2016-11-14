@@ -1,0 +1,25 @@
+---
+- name: add ppa chris-lea/node.js apt key
+  apt_key: >
+    url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB9316A7BC7917B12
+    state=present
+  tags:
+    - setup:npm
+
+- name: add chris-lea/node.js package sources
+  apt_repository: >
+    repo="deb http://ppa.launchpad.net/chris-lea/node.js/ubuntu {{ setupNPMPackageSource }} main" state=present
+  tags:
+    - setup:npm
+
+- name: install nodejs and npm
+  apt: pkg=nodejs state=installed
+  tags:
+    - setup:npm
+
+- name: install npm globals
+  npm: >
+    name={{ item }} global=yes state=present
+  with_items: setupNPMGlobals
+  tags:
+    - setup:npm

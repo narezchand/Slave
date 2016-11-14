@@ -1,0 +1,20 @@
+; {{ ansible_managed }}
+; configuration for php ZendOpcache module
+; priority=05
+zend_extension={{ phpModulePath }}/opcache.so
+opcache.enable=1
+{% if stage == 'production' %}
+opcache.memory_consumption=512
+opcache.max_accelerated_files=7962
+opcache.validate_timestamps=0
+opcache.revalidate_freq=0
+{% else %}
+opcache.memory_consumption=512
+opcache.max_accelerated_files=7962
+opcache.validate_timestamps=1
+opcache.revalidate_freq=2
+{% endif %}
+opcache.fast_shutdown=1
+opcache.enable_cli=0
+opcache.save_comments=0
+opcache.load_comments=0

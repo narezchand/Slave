@@ -1,0 +1,5 @@
+---
+- name: restart sphinxsearch instances
+  supervisorctl: >
+    name='sphinxsearch:*' state=restarted
+  ignore_errors: True

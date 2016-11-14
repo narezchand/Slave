@@ -1,0 +1,57 @@
+---
+- name: add replication slave user
+  mysql_user: >
+    user=_slave password="{{ mysqlAppsUsersReplicationPassword }}"
+    host='%' priv=*.*:'REPLICATION SLAVE' state=present
+
+- name: add each user's mysql user
+  mysql_user: >
+    user="{{ item.mysqlUser }}"
+    password="{{ item.mysqlPass }}"
+    host='%'
+    priv=*.*:SELECT,INSERT,UPDATE,DELETE,FILE,'CREATE TEMPORARY TABLES','CREATE VIEW',TRIGGER,'SHOW VIEW','SHOW DATABASES','LOCK TABLES'
+  with_items: mysqlAppsUsers
+  when: item.username in mysqlAppsUsersEnabled
+
+- name: add username to user's .my.cnf
+  ini_file: >
+    dest=/home/{{ item.username }}/.my.cnf section=client
+    option=user value='"{{ item.mysqlUser }}"'
+  with_items: mysqlAppsUsers
+  when: item.username in mysqlAppsUsersEnabled
+
+- name: add password to user's .my.cnf
+  ini_file: >
+    dest=/home/{{ item.username }}/.my.cnf section=client
+    option=password value='"{{ item.mysqlPass }}"'
+  with_items: mysqlAppsUsers
+  when: item.username in mysqlAppsUsersEnabled
+
+- name: add mysql application user privileges
+  mysql_user: >
+    state=present
+    user="{{ item.username }}"
+    password="{{ item.password }}"
+    host="%"
+    priv={{ item.name }}.*:ALL,GRANT
+  with_items: mysqlAppsUsersData
+  when: >
+    mysqlAppsUsersData and
+    item.type == "mysql" and
+    item.username is defined and
+    item.password is defined
+  tags:
+    - client:provision
+
+- name: add mysql application databases
+  mysql_db: >
+    db={{ item.name }}
+    state=present
+    encoding=utf8
+    collation=utf8_general_ci
+  with_items: mysqlAppsUsersData
+  when: >
+    mysqlAppsUsersData and
+    item.type == "mysql"
+  tags:
+    - client:provision

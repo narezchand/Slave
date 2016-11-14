@@ -1,0 +1,22 @@
+---
+- name: ensure directory /storage/client in glusterfs
+  file: >
+    path=/storage/{{ item.name }} state=directory
+    owner=www-data group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress"
+  tags:
+    - client:provision
+
+- name: ensure directory /storage/client/uploads in glusterfs
+  file: >
+    path=/storage/{{ item.name }}/uploads state=directory
+    owner=www-data group=users mode=2775
+  with_items: applications
+  when: >
+    item.instance and
+    item.type == "wordpress"
+  tags:
+    - client:provision

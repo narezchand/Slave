@@ -1,0 +1,19 @@
+## {{ ansible_managed }}
+
+## fastcgi cache - mostly for standalone servers
+fastcgi_cache_path  {{ nginxCachePath }}/fastcgi-cache/  levels=1:2
+                    keys_zone=fastcgi_cache:5m
+                    inactive=6h  max_size=1G
+                    loader_threshold=2592000000 loader_sleep=1 loader_files=100000;
+
+# proxy cache - for load balancers
+proxy_cache_path    {{ nginxCachePath }}/proxy-cache/  levels=1:2
+                    keys_zone=proxy_cache:5m
+                    inactive=6h  max_size=1G
+                    loader_threshold=2592000000 loader_sleep=1 loader_files=100000;
+
+# proxy cache for asset mapping
+proxy_cache_path    {{ nginxCachePath }}/mapped-assets/  levels=1:2
+                    keys_zone=mapped_assets:5m
+                    inactive=6h  max_size=1G
+                    loader_threshold=2592000000 loader_sleep=1 loader_files=100000;

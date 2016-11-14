@@ -1,0 +1,95 @@
+---
+##
+# README: any vars here will override vars specified *anywhere* else
+# with the exception of those vars passed in with the '-e' flag.
+#
+# if you'd like your development environment configured a certain way,
+# beyond the defaults take a look at each of the "default/main.yml" files
+# found within any given role inside the "roles/" directory.
+#
+
+##
+# if you wish to run ansible commands from your host to your guest VM,
+# you'll need to uncomment the following and update the path to your
+# vagrant private key file
+#
+ansible_ssh_host: 192.168.33.10
+ansible_ssh_port: 22
+ansible_ssh_user: vagrant
+ansible_ssh_private_key_file: /Users/TODO/.ssh/vagrant
+
+##
+# add your ghetto API key here
+#
+ghettoAPIKey: YOUR_GHETTO_API_KEY
+
+##
+# turn assetmapping on or off. default: on
+# when a requested web asset is not present in your local install,
+# nginx will attempt to retrieve it from an upstream environment.
+# if you prefer to actually *see* what images are missing, set this
+# value to false.
+#
+nginxAssetsMappingEnabled: true
+
+nginxSSLData:
+  -
+    certificate: |
+        -----BEGIN CERTIFICATE-----
+        MIIE/TCCA+WgAwIBAgIJAML1Z1q5u6kcMA0GCSqGSIb3DQEBBQUAMIGvMQswCQYD
+        VQQGEwJVUzEQMA4GA1UECBMHRmxvcmlkYTERMA8GA1UEBxMITGFrZWxhbmQxHDAa
+        BgNVBAoTE1ZvY2UgQ29tbXVuaWNhdGlvbnMxEjAQBgNVBAsTCVBsYXRmb3JtczEi
+        MCAGA1UEAxQZKi5zdGFnaW5nLnZvY2Vjb25uZWN0LmRldjElMCMGCSqGSIb3DQEJ
+        ARYWc3lzb3BzQHZvY2Vjb25uZWN0LmNvbTAeFw0xNTExMDUxNzU1MjBaFw0xNjEx
+        MDQxNzU1MjBaMIGvMQswCQYDVQQGEwJVUzEQMA4GA1UECBMHRmxvcmlkYTERMA8G
+        A1UEBxMITGFrZWxhbmQxHDAaBgNVBAoTE1ZvY2UgQ29tbXVuaWNhdGlvbnMxEjAQ
+        BgNVBAsTCVBsYXRmb3JtczEiMCAGA1UEAxQZKi5zdGFnaW5nLnZvY2Vjb25uZWN0
+        LmRldjElMCMGCSqGSIb3DQEJARYWc3lzb3BzQHZvY2Vjb25uZWN0LmNvbTCCASIw
+        DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAN3cbFjupsW1mSgkfLOwC9JM7q/Y
+        g1cI0d9z+jBH1OK54mkNwuNZ79tHSPKLFOnp2ciGXp8RyahI6/gbJtpAOm+kROlP
+        PV2WKgJezOd1ROoZndoEcS7xg/AiTO/lIPK9hP80HUjv0PWycyHUF5sPhmBLsBN/
+        qM+gt0oYGeGPFW8XySsZrX1fRBs+EgOVt/xwYge75OrEtZe4GX9Tke2NFBamzPLU
+        TZ3fPUYICS7byRj9oX7MKs+gzBhDKC5Ypjk6Dws3suRDztAhOi4Q+yg5U1w2Cfe+
+        JOQHadezd+r0KgQ2foox8RY7LOiMYX4SK4qzdcBqdLLMFosO2wMJ6Ni4FWsCAwEA
+        AaOCARgwggEUMB0GA1UdDgQWBBTVEvB21XLcQVskUqCxnVyf8igZ4jCB5AYDVR0j
+        BIHcMIHZgBTVEvB21XLcQVskUqCxnVyf8igZ4qGBtaSBsjCBrzELMAkGA1UEBhMC
+        VVMxEDAOBgNVBAgTB0Zsb3JpZGExETAPBgNVBAcTCExha2VsYW5kMRwwGgYDVQQK
+        ExNWb2NlIENvbW11bmljYXRpb25zMRIwEAYDVQQLEwlQbGF0Zm9ybXMxIjAgBgNV
+        BAMUGSouc3RhZ2luZy52b2NlY29ubmVjdC5kZXYxJTAjBgkqhkiG9w0BCQEWFnN5
+        c29wc0B2b2NlY29ubmVjdC5jb22CCQDC9WdaubupHDAMBgNVHRMEBTADAQH/MA0G
+        CSqGSIb3DQEBBQUAA4IBAQC3Js1O2dPIg1vVKhorXnDjUX+UI9VaC7Kte8mWj4GK
+        WKxVZ3DpiI3OUv9Fo745UnT+QuB3yfti+eQfNNhnsqsEvFWqKtXPkYkKmkXE9uKL
+        dduC05MMFqU0YIGO13+vS5DCRivflvDL/1KfiX6mS5jjUtkpjXAwFRpZHxe3/R7r
+        3PRs4ZgkBmN0q3pG4sJM2xXgHFt//5FtkZ8+pS1hzsRBBx6t4cMZdVCXradjfJku
+        3GB7/doT0KEYwcnqIuLlhpwUpW5PPuPdFN6ARYJ3/AwgjpNb0xGkJ5wSRDxRgQNG
+        7Kfgtq+oLrQlLxvbarSX1aTMwLuORwS0Mrn+bHoSWgk7
+        -----END CERTIFICATE-----
+    key: |
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIEpAIBAAKCAQEA3dxsWO6mxbWZKCR8s7AL0kzur9iDVwjR33P6MEfU4rniaQ3C
+        41nv20dI8osU6enZyIZenxHJqEjr+Bsm2kA6b6RE6U89XZYqAl7M53VE6hmd2gRx
+        LvGD8CJM7+Ug8r2E/zQdSO/Q9bJzIdQXmw+GYEuwE3+oz6C3ShgZ4Y8VbxfJKxmt
+        fV9EGz4SA5W3/HBiB7vk6sS1l7gZf1OR7Y0UFqbM8tRNnd89RggJLtvJGP2hfswq
+        z6DMGEMoLlimOToPCzey5EPO0CE6LhD7KDlTXDYJ974k5Adp17N36vQqBDZ+ijHx
+        Fjss6IxhfhIrirN1wGp0sswWiw7bAwno2LgVawIDAQABAoIBAQDDC9X1GVpk1pIf
+        SHSZRFwgNqJg1eghzA82c6+wYnY2HVV/Jin/1kGYdcMb+EoamwxrzjXBgtHWsMVD
+        ChvOJEk7fR9YPeGlNS8Zhl593gsIBB1SXjVjH9DufDlHbhjZTuRtuFNGnA8I8ill
+        xCA8ohlw7xmNCt5OKuz4pteaBUDCuHOIqR8E6AY9ptGvnfeGniHzb/4QkBNICZm9
+        qNR6oGYnqbs2YPxbTq53bePigHuvYN70jR+AyqTKGgi4OxmZFq/diPnckfIju7uM
+        bkYdX0rfhADtEW8GESZyMkokM34itU64MHgjgBOoG9BMCJxJqMotmHE+C/ROtylV
+        rfmVvHaBAoGBAO8V2r3heQHAq/5DjS0a42nxOXRXX+agdewH21UGiOc0XdOaEUKO
+        RBqSLLFm6VKiIZRgS64Y21XoEiNrU0g29MeHU/7lGNjklsQa/jLg77JzF573U1ap
+        DPMqhfFNeMX/YBZYYcvYjP/i79ykvOiWhXsHLjTrzjMELNEEpD11ixUHAoGBAO2O
+        nRkQYwvNLtYoCqS86djxZCXtZ1nFb/PZtN6Mfs3w7i10ye1KR0aBZeu4bgcQkww9
+        8RPvPm8zQO43PQYM3KoHcLcr1PIgg20m3T0+PCfY6jwlzQAIN+bqNN1RWok+Q5jV
+        Ct2QLlJhLe885HlB7lXnyd5IP5EVp5DwbkZZn2d9AoGAa0EKmBQGDNs6TR5QvuNJ
+        EcW9WIu54eQqAnCj3EjKMa40STDcfVcFBkZ89jiMgx1oov9v8/ICs08gk/MZsVO2
+        C6yR6c8sjmA9okvZrUlrPkqTViTtpfrAbHWvEMkIXQprOJr9hEzpNAHCSOE+PbkI
+        uGBIQkVmg0xkLoA+jbOlaRECgYEAsX+F0lx0JTVCcbGpgj3FXNvAwLYKKwFjDQj2
+        I/NGLAqBbGV/G1YMu5mj1eUQESdJODRwFT0FoYDiWxva9NJXbpPwnGybx+6TRNNt
+        K3185Skmm5qC+isp2dfVeCh5RWLIj0FfxP0eH1+NOtx8uj2RH475PqUtGfLcKWf8
+        fYQpnuECgYAePLuBQtxEn4B+fwttpP9ktUFF7CgE73s54YP3HyQKf3AuaMuf69qn
+        efaGoY2ZuZQQQcBlZ/fsAwqNxKMvRFl8Al0DP414+R1Gt+uKFteSshFCiXO+KaEz
+        s5hrgZ6ImTeSps4KFh8FoAKseVh1xzuxQtSK443C3Q8BqDMlGaQpbQ==
+        -----END RSA PRIVATE KEY-----
+    name: star.staging.voceconnect.dev

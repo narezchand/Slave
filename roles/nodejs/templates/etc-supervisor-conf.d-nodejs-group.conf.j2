@@ -1,0 +1,13 @@
+[group:nodejs]
+{% if applications is defined %}
+programs=
+{%- for _app in applications if _app.instance and _app.type == 'node' %}
+{%- if not loop.last %}
+{{ _app.name }},
+{%- else %}
+{{ _app.name }}
+{%- endif %}
+{% endfor %}
+{% endif %}
+
+priority=999

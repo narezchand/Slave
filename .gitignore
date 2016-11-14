@@ -1,0 +1,13 @@
+.DS_Store
+*.sublime*
+Rakefile
+
+## vagrant specific
+.vagrant/
+.version
+virtualbox-settings
+
+## inventories
+inventory/custom/*
+!inventory/custom/sandbox.json
+inventory/host_vars/development.voceplatforms.com.yml

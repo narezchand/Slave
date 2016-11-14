@@ -1,0 +1,31 @@
+---
+- name: ensure /etc/php/cli/conf.d directory
+  file: >
+    path=/etc/php5/cli/conf.d state=directory
+    owner=root group=root mode=0755
+  tags:
+    - php:cli
+
+- name: add /etc/php5/cli/php.ini
+  copy: >
+    src=etc-php5-cli-php.ini
+    dest=/etc/php5/cli/php.ini
+    owner=root group=root mode=0644
+  tags:
+    - php:cli
+
+- name: create /etc/php5/cli/conf.d symlinks for enabled modules
+  file: >
+    src=/etc/php5/mods-available/{{ item.mod }}.ini
+    dest=/etc/php5/cli/conf.d/{{ item.priority|default(20) }}-{{ item.mod }}.ini
+    owner=root group=root state=link
+  with_items: phpCLIModsEnabled
+  tags:
+    - php:cli
+
+- name: remove /etc/php5/cli/conf.d symlinks for disabled modules
+  file: >
+    path=/etc/php5/cli/conf.d/{{ item.priority|default(20) }}-{{ item.mod }}.ini state=absent
+  with_items: phpCLIModsDisabled
+  tags:
+    - php:cli

@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+
+$stdout.sync = true
+ENV['GIT_DIR'] = nil
+
+require 'rubygems'
+require 'sshkit'
+require 'sshkit/dsl'
+
+## stdin vars for refspecs and branch name
+old_rev,
+new_rev,
+ref_name         = STDIN.gets.split
+
+## read and set vars from environment
+user             = "#{ENV['GL_USER']}"
+stage            = "#{ENV['GL_REPO']}".split("/").first
+project          = "#{ENV['GL_REPO']}".split("/").last
+repo_path        = "#{ENV['GL_REPO_BASE']}/#{ENV['GL_REPO']}.git"
+branch           = "#{ref_name}".gsub('refs/heads/', '')
+cached_repo_path = "/opt/push-deploy/#{stage}/#{project}"
+git_options      = "--git-dir=#{cached_repo_path}/.git --work-tree=#{cached_repo_path}"
+
+## if new rev is empty, push is to delete a branch
+if new_rev == '0000000000000000000000000000000000000000'
+  exit 0
+end
+
+## check for existing cached copy
+run_locally do
+  ## if stage is production, ensure branch is master
+  ##if stage == 'production' && branch != 'master'
+  ##  error ""
+  ##  error " only the 'master' branch can be deployed to 'production'..."
+  ##  error ""
+  ##  exit 1
+  ##end
+
+  ## if the repo doesn't already exist, clone it
+  unless test "[ -d #{cached_repo_path} ]"
+    execute :git, "clone #{repo_path} #{cached_repo_path}"
+  end
+
+  within "#{cached_repo_path}" do
+    ## add the github remote if it doesn't exist
+    unless test "git #{git_options} ls-remote 'github'"
+      execute "git", "remote", "add 'github' 'git@github.com:voceconnect/#{project}.git'"
+    end
+
+    ## fetch updates from github
+    execute :git, "fetch -q github"
+
+    ## get the revision from github
+    github_rev = capture :git, "merge-base '#{new_rev}' 'github/#{branch}'" rescue nil
+    github_rev = github_rev.to_s.gsub("\n", "")
+    if github_rev != new_rev
+      error ""
+      error " commit '#{new_rev[0,7]}' must exist in 'github/#{branch}'..."
+      error " have you pushed '#{branch}' to github?"
+      error ""
+      exit 1
+    end
+
+    ## pull down tags and reset hard to new revision
+    execute :git, "fetch --tags github"
+    execute :git, "reset --hard github/#{branch}"
+  end
+end
+
+## need to have this outside run_locally if flushing stdout
+## is desired, at least until sshkit supports streams
+deploy_command = <<-EOS.gsub(/\s+/, " ").strip
+  cd #{cached_repo_path} && \
+  LOG_FILE=#{ENV['HOME']}/logs/#{project}.log \
+  SLACK_USER=#{user} \
+  BRANCH_NAME=#{branch} \
+  cap --rakefile $HOME/Capfile #{stage} deploy
+EOS
+
+rc = system("#{deploy_command}")
+if rc
+  exit 0
+else
+  exit 1
+end

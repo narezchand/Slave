@@ -1,0 +1,8 @@
+[program:redis-{{ item.name }}]
+user=root
+command=/usr/bin/redis-server /etc/redis/{{ item.name }}.conf
+priority=100
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/supervisor/{{ item.name }}-redis.stderr.log
+stdout_logfile=/var/log/supervisor/{{ item.name }}-redis.stdout.log

@@ -1,0 +1,86 @@
+---
+- name: ensure directory /var/www/app
+  file: >
+    path=/var/www/{{ item }} state=directory
+    owner=robot group=users mode=2775
+  with_items:
+    - wp-plugins-packagist
+    - packagist
+
+- name: ensure directory /var/www/app/htdocs
+  file: >
+    path=/var/www/{{ item }}/htdocs state=directory
+    owner=robot group=users mode=2775
+  with_items:
+    - wp-plugins-packagist
+    - packagist
+
+- name: clone https://github.com/outlandishideas/wpackagist.git
+  git: >
+    dest=/var/www/wp-plugins-packagist/htdocs/current
+    repo=https://github.com/outlandishideas/wpackagist.git
+    force=yes version=master accept_hostkey=True
+
+- name: remove wpackagist.git web root files
+  file: >
+    path=/var/www/wp-plugins-packagist/htdocs/current/web/{{ item }}
+    state=absent
+  with_items:
+    - index.html
+    - foundation.css
+    - favicon.png
+    - style.css
+
+- name: clone git@github.com:voceconnect/voce-packagist.git
+  git: >
+    dest=/var/www/packagist/htdocs/current
+    repo=git@github.com:voceconnect/voce-packagist.git
+    force=yes version=master accept_hostkey=True
+
+- name: create /var/log/nginx directories
+  file: >
+    path=/var/log/nginx/{{ item }} state=directory
+    owner=root group=root mode=0755
+  with_items:
+    - wp-plugins-packagist
+    - packagist
+
+- name: add /etc/nginx/sites-available packagist configs
+  template: >
+    src={{ item }}-nginx.conf.j2
+    dest=/etc/nginx/sites-available/{{ item }}.conf
+    owner=root group=root mode=0644
+  with_items:
+    - wp-plugins-packagist
+    - packagist
+  notify: nginx reload
+
+- name: add /etc/nginx/sites-enabled packagist symlinks
+  file: >
+    src=/etc/nginx/sites-available/{{ item }}.conf
+    dest=/etc/nginx/sites-enabled/{{ item }}.conf
+    owner=root group=root state=link
+  with_items:
+    - wp-plugins-packagist
+    - packagist
+  notify: nginx reload
+
+- name: install wpackagist composer dependencies
+  shell: >
+    chdir=/var/www/wp-plugins-packagist/htdocs/current
+    composer install
+  register: composerInstall
+  changed_when: >
+    'Nothing to install or update' not in composerInstall.stdout
+
+- name: add cron job to update wpackagist every hour
+  cron: >
+    name="update wpackagist registry"
+    job="(cd /var/www/wp-plugins-packagist/htdocs/current && ./bin/cmd refresh && ./bin/cmd update && ./bin/cmd build) > /dev/null 2>&1 || echo 'wpackagist updates failed...'"
+    user=root state=present minute="30"
+
+- name: add cron job to update packagist every 15 minutes
+  cron: >
+    name="update packagist registry"
+    job="(cd /var/www/packagist/htdocs/current && git fetch origin && git reset --hard origin/master) > /dev/null 2>&1 || echo 'packagist updates failed...'"
+    user=root state=present minute="*/15"

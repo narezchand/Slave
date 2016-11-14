@@ -1,0 +1,42 @@
+  location ~* (?:atom(?:/|\.xml)?(?:/index.php)?|feed(?:/|\.xml|/rss2?/?|/rdf/?|/podcast/?)?(?:/index\.php|.+\.xml)?|index\.rdf|sitemap(?:.+)?\.xml) {
+    ## set feedburner for cache key
+    ## this way we aren't caching a 307
+    set $is_feedburner 0;
+    if ($http_user_agent ~* "feedburner") {
+      set $is_feedburner 1;
+    }
+
+    ## cache responses in the short zone - feeds should always
+    ## be cached - they dont vary on user agent or if you're logged in
+    proxy_cache_key    "$request_method:$is_feedburner:$scheme:$host$request_uri";
+    proxy_cache        load_balanced;
+    proxy_cache_bypass $_output_cache;
+    proxy_no_cache     $_output_cache;
+
+    ## max size, if larger - just stream the asset
+    proxy_max_temp_file_size  2m;
+
+    ## let the browser know we vary on encoding only (not cookie or user agent)
+    more_set_headers  "Vary: Accept-Encoding";
+    more_set_headers  -s '200 301' "Cache-Control: public, max-age=900, must-revalidate";
+    more_set_headers  -s '200 301 307 404' "X-Cache-Status: $upstream_cache_status";
+
+    ## ignore and hide backend headers
+    proxy_ignore_headers  Expires Cache-Control Set-Cookie Vary;
+    proxy_hide_header     Expires;
+    proxy_hide_header     Cache-Control;
+    proxy_hide_header     Set-Cookie;
+    proxy_hide_header     Vary;
+    proxy_hide_header     Pragma;
+    proxy_hide_header     Last-Modified;
+    proxy_hide_header     ETag;
+
+    ## how to cache various responses
+    proxy_cache_valid     200 301 15m;
+    proxy_cache_valid     302 307 404 1m;
+
+    # send to PHP-FPM
+    # TODO
+    proxy_pass    unix:/var/www/$_application/tmp/php5-fpm.sock;
+    break;
+  }

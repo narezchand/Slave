@@ -1,0 +1,30 @@
+## {{ ansible_managed }}
+server {
+  listen 80 default_server;
+
+  # accept redirects based on the value of the host header. if
+  # there's no valid vhost configuration file with a
+  # corresponding server_name directive then signal an error and
+  # fail silently. See:
+  # http://wiki.nginx.org/NginxHttpCoreModule#server_name_in_redirect
+  server_name_in_redirect off;
+  return 444;
+}
+
+server {
+  listen {{ nginxListenPort }};
+  server_name {{ nginxDefaultServerName }} 127.0.0.1;
+
+  access_log off;
+  error_log /var/log/nginx/error.log;
+
+  location /nginx_status {
+    stub_status  on;
+    access_log   off;
+
+    allow        127.0.0.1;
+    deny         all;
+  }
+
+  {{ nginxDefaultConfiguration }}
+}

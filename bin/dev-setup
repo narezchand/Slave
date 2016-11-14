@@ -1,0 +1,76 @@
+#!/bin/bash
+
+usage() {
+  echo "usage: dev setup [-v]"
+  echo
+  echo "options:"
+  echo "       -h  shows this message"
+  echo
+  echo "Runs setup commands for host machine..."
+}
+
+init() {
+  check_executed_from_within_host
+  echo "If prompted, enter your Mac OSX user password..."
+}
+
+# default entry when no SUBACTION is given
+cmd_default() {
+  ## update brew package meta
+  brew update 2>/dev/null
+  rc=$?
+
+  if [[ $rc != 0 ]]; then
+    die "there was an error executing 'brew update' on your system. please execute 'brew update' and fix your homebrew install..."
+  fi
+
+  ## brew install python
+  brew ls | grep -q "python" || brew install python
+
+  ## install ansible
+  brew ls | grep -q "ansible" || brew install homebrew/versions/ansible19
+
+  ## setup python paths
+  mkdir -p $HOME/Library/Python/2.7/lib/python/site-packages
+  echo '/usr/local/lib/python2.7/site-packages' > $HOME/Library/Python/2.7/lib/python/site-packages/homebrew.pth
+
+  ## download the private key to ssh into the vm
+  if [ ! -f $HOME/.ssh/vagrant ]; then
+    curl -s -o $HOME/.ssh/vagrant http://voce-packages.s3.amazonaws.com/vagrant 2>/dev/null
+    chmod 600 $HOME/.ssh/vagrant
+  fi
+
+  ## install some vagrant plugins
+  vagrant plugin list | grep -q "vagrant-dns" || vagrant plugin install vagrant-dns
+  vagrant plugin list | grep -q "vagrant-bindfs" || vagrant plugin install vagrant-bindfs
+
+  ## add network listener for vm rsyslog
+  sudo /usr/libexec/PlistBuddy -c "print :Sockets:NetworkListener" /System/Library/LaunchDaemons/com.apple.syslogd.plist > /dev/null 2>&1 || \
+    (
+      sudo /usr/libexec/PlistBuddy -c "add :Sockets:NetworkListener dict" /System/Library/LaunchDaemons/com.apple.syslogd.plist && \
+      sudo /usr/libexec/PlistBuddy -c "add :Sockets:NetworkListener:SockServiceName string syslog" /System/Library/LaunchDaemons/com.apple.syslogd.plist && \
+      sudo /usr/libexec/PlistBuddy -c "add :Sockets:NetworkListener:SockType string dgram" /System/Library/LaunchDaemons/com.apple.syslogd.plist && \
+      sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist && \
+      sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist
+    )
+
+  ## copy the sample files for editing
+  samples=(
+    inventory/host_vars/development.voceplatforms.com.yml.sample
+    virtualbox-settings.sample
+  )
+  for sample in "${samples[@]}"
+  do
+    dest="${sample%".sample"}"
+    test -f "${dest}" && \
+      echo "${dest} exists, not copying..." || \
+      (cp "${sample}" "${sample%".sample"}"; echo "created ${dest}")
+  done
+
+  echo "Setup tasks completed successfully!"
+}
+
+cmd_help() {
+  usage
+  exit 0
+}

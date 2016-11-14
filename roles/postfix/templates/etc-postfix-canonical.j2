@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+# [mail for] [should re-route to]
+root@{{ ansible_fqdn }} {{ postfixRootEmail }}
+root@localhost {{ postfixRootEmail }}
+robot@{{ ansible_fqdn }} {{ postfixRootEmail }}
+robot@localhost  {{ postfixRootEmail }}
+# route mail sent to the following to 'nobody', which routes to /dev/null
+{% if postfixNullRoutes is defined %}
+{% for address in postfixNullRoutes %}
+{{ address }} nobody@localhost
+{% endfor %}
+{% endif %}

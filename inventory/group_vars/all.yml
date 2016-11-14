@@ -1,0 +1,24 @@
+---
+# vars here apply to all hosts regardless of group or role
+# and take precedence over any role provided defaults/vars
+# host vars take precedence over vars defined here
+
+## motd logo for all hosts
+setupMOTDLogo: voce platforms
+
+## network domain for all hosts
+setupNetworkTLD: voceplatforms.com
+
+## allow ssh through the firewall
+setupFirewallAllowSSH: true
+
+## which gems to install on all hosts
+setupRubyGroupGems:
+  - bundler
+  - json
+  - rack
+  - sshkit
+  - httparty
+
+## by default, don't execute permissions fixing scripts
+executeFixPermissions: false

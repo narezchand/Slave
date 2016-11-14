@@ -1,0 +1,70 @@
+---
+- name: install packages
+  apt: >
+    pkg=graphviz state=installed update_cache=yes cache_valid_time=86400
+
+- name: ensure directory /var/www/webgrind
+  file: >
+    path=/var/www/webgrind state=directory
+    owner=root group=root mode=0755
+
+- name: ensure directory /var/www/webgrind/htdocs
+  file: >
+    path=/var/www/webgrind/htdocs state=directory
+    owner=robot group=users mode=2775
+
+- name: ensure directory /var/www/webgrind/tmp
+  file: >
+    path=/var/www/webgrind/tmp state=directory
+    owner=nobody group=nogroup mode=777
+
+- name: create /var/log/nginx/webgrind directory
+  file: >
+    path=/var/log/nginx/webgrind state=directory
+    owner=root group=root mode=0755
+
+- name: add /etc/cron.d/cachegrind-cleanup
+  copy: >
+    src=etc-cron.d-cachegrind-cleanup
+    dest=/etc/cron.d/cachegrind-cleanup
+    owner=root group=root mode=0644
+
+- name: clone https://github.com/jokkedk/webgrind.git
+  git: >
+    dest=/var/www/webgrind/htdocs/current
+    repo=https://github.com/jokkedk/webgrind.git
+    force=yes version=master
+
+- name: add /var/www/webgrind/htdocs/current/config.php
+  copy: >
+    src=var-www-webgrind-htdocs-current-config.php
+    dest=/var/www/webgrind/htdocs/current/config.php
+    owner=nobody group=nogroup mode=0644
+
+- name: update permissions of /var/www/webgrind/htdocs
+  shell: >
+    chown -R robot:users /var/www/webgrind/htdocs &&
+    find /var/www/webgrind/htdocs -type d -exec chmod 2775 {} \; &&
+    find /var/www/webgrind/htdocs -type f -exec chmod 664 {} \;
+  changed_when: False
+
+- name: add /etc/nginx/sites-available/webgrind.conf configs
+  template: >
+    src=etc-nginx-sites-available-webgrind.conf.j2
+    dest=/etc/nginx/sites-available/webgrind.conf
+    owner=root group=root mode=0644
+  notify: nginx reload
+
+- name: add /etc/nginx/sites-enabled/webgrind.conf symlinks
+  file: >
+    src=/etc/nginx/sites-available/webgrind.conf
+    dest=/etc/nginx/sites-enabled/webgrind.conf
+    owner=root group=root state=link
+  notify: nginx reload
+
+- name: add /etc/php5/fpm/pool.d/webgrind.conf
+  copy: >
+    src=etc-php5-fpm-pool.d-webgrind.conf
+    dest=/etc/php5/fpm/pool.d/webgrind.conf
+    owner=root group=root mode=0644
+  notify: php5-fpm reload

@@ -1,0 +1,21 @@
+# {{ ansible_managed }}
+Host github.com
+  User git
+  Hostname github.com
+  PreferredAuthentications publickey
+  Compression yes
+  StrictHostKeyChecking no
+  IdentityFile /home/git/.ssh/github.rsa
+
+Host *.voceplatforms.com
+  User robot
+  PreferredAuthentications publickey
+  StrictHostKeyChecking no
+  IdentityFile /home/git/.ssh/network.rsa
+
+
+### Pantheon Support
+Host *.drush.in
+  Port 22
+  PasswordAuthentication no
+  IdentityFile ~/.ssh/pantheon_robot_rsa

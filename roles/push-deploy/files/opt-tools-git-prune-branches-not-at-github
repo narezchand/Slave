@@ -1,0 +1,60 @@
+#!/bin/bash
+##
+## removes branches that don't exist in a github remote from the local
+## gitolite instance
+##
+
+## set stages
+stages=(production uat staging)
+
+## functions
+contains_element () {
+  local e
+  for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+  return 1
+}
+
+## loop over all stages and projects
+for stage in "${stages[@]}" ; do
+  for project in `/bin/ls /opt/push-deploy/${stage}` ; do
+    ## move to project directory
+    cd "/opt/push-deploy/${stage}/${project}"
+
+    ## fetch and clean up branches from github
+    git fetch -q github
+    git remote prune github
+
+    ## fetch data from origin in /home/git/...
+    git fetch -q origin
+
+    ## get all the branches that exist at origin and github
+    origin_branches=()
+    eval "$(git for-each-ref --shell --format='origin_branches+=(%(refname))' refs/remotes/origin)"
+
+    github_branches=()
+    eval "$(git for-each-ref --shell --format='github_branches+=(%(refname))' refs/remotes/github)"
+
+    ## loop over all the branches in origin, and check for a corresponding
+    ## branch at github. if one doesn't exist at github, delete it...
+    for branch in "${origin_branches[@]}"; do
+      branch_name=${branch##refs/remotes/origin/}
+
+      ## skip if master branch
+      if [[ "${branch_name}" == "master" ]]; then
+        continue;
+      fi
+
+      ## check if origin branch exists in github, if it doesn't - remove it
+      if ! contains_element "refs/remotes/github/${branch_name}" "${github_branches[@]}"; then
+        /usr/bin/git --git-dir "/home/git/repositories/${stage}/${project}.git" \
+          update-ref -d "refs/heads/${branch_name}"
+      fi
+    done
+
+    ## prune origin
+    git remote prune origin
+
+    ## sleep a bit
+    sleep 1
+  done
+done

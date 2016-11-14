@@ -1,0 +1,10 @@
+---
+- name: postfix newaliases
+  shell: /usr/bin/newaliases
+
+- name: postmap canonical
+  shell: /usr/sbin/postmap /etc/postfix/canonical
+  notify: postfix restart
+
+- name: postfix restart
+  service: name=postfix state=restarted

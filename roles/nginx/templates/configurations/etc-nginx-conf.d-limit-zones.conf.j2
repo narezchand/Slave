@@ -1,0 +1,10 @@
+## {{ ansible_managed }}
+## connection/request limit zones
+
+## standard zone
+limit_conn_zone   $binary_remote_addr    zone=connection_limit:10m;
+limit_req_zone    $binary_remote_addr    zone=request_limit:10m  rate=5r/s;
+
+## return error 429 when connection/request limits reached
+limit_req_status  429;
+limit_conn_status 429;

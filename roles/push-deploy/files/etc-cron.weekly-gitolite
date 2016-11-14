@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# loops over available environments, then available repositories
+# runs git gc --aggressive --prune on each
+for env_path in `find /home/git/repositories -maxdepth 1 -type d -print \
+  | egrep -v "\.git" \
+  | sed 1,1d`
+do
+  for repo_path in `find $env_path -maxdepth 1 -type d -print \
+    | sed 1,1d`
+  do
+    cd $repo_path && \
+    /usr/bin/git gc -q --aggressive --prune
+  done
+done

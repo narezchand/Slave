@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+$InputFileName /var/log/nginx/{{ item.name }}/error.log
+$InputFileTag nginx_error:
+$InputFileStateFile nginx-{{ item.name }}-error
+$InputRunFileMonitor

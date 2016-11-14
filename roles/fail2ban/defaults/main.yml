@@ -1,0 +1,66 @@
+---
+# default vars - can apply to any OS
+
+# which version of fail2ban to install -
+# see github.com/fail2ban/fail2ban/releases
+fail2banVersion: 0.9.2
+
+# array of IP addresses that fail2ban should never block
+fail2banWhitelist: []
+# example:
+# - 255.255.255.255
+# - 65.196.188.0/24
+
+# email address to send fail2ban notices to
+fail2banEmailTo: ""
+
+# what action should fail2ban take?
+fail2banAction: "action_"
+# options:
+# action_    = ban only
+# action_mw  = ban, send email with whois report
+# action_mwl = ban, send email with whois report, relevant log lines
+
+# filters that should be enabled on the host
+# used best as a host_var
+fail2banFilters: ""
+# example: |
+#    [nginx-post-ddos]
+#    enabled   = true
+#    port      = http
+#    filter    = nginx-post-ddos
+#    logpath   = /var/log/nginx/*/*.access.log
+#    maxretry  = 40
+#    findtime  = 60
+
+#    [wordpress]
+#    enabled   = true
+#    port      = http,https
+#    filter    = wordpress
+#    logpath   = /var/log/auth.log
+#    maxretry  = 5
+#    findtime  = 60
+
+#    [wordpress-daily]
+#    enabled   = true
+#    port      = http,https
+#    filter    = wordpress
+#    logpath   = /var/log/auth.log
+#    maxretry  = 25
+#    findtime  = 86400
+
+# setsup rackBan to send ban requests to load balancers
+fail2banRackspaceConfig: []
+# example: 
+#  - accountID: 123456
+# - username: rackuser
+# - apikey: abcdefghijklmnopqrs1234567
+# - loadBalancers:
+#    -
+#        name: lbone
+#        id: 123456
+#        region: iad
+#    -
+#        name: lbtwo
+#        id: 123457
+#        region: iad

@@ -1,0 +1,56 @@
+---
+- name: add 'robot' user account
+  user: >
+    name=robot comment="Robot User" state=present system=true
+    createhome=yes home=/home/robot shell=/bin/bash groups=sudo
+  tags:
+    - setup:user:robot
+
+- name: add /home/robot/.ssh
+  file: >
+    path=/home/robot/.ssh state=directory
+    owner=robot group=robot mode=0700
+  tags:
+    - setup:user:robot
+
+- name: add authorized_key for robot
+  authorized_key: >
+    user=robot
+    key="{{ setupSSHRobotAuthorizedKey }}"
+  tags:
+    - setup:user:robot
+
+- name: add /home/robot/.ssh/config
+  copy: >
+    src=dot-ssh-config
+    dest=/home/robot/.ssh/config
+    owner=robot group=robot mode=0600
+  tags:
+    - setup:user:robot
+
+- name: add /home/robot/.ssh/id_rsa
+  template: >
+    src=home-robot-.ssh-id_rsa.j2
+    dest=/home/robot/.ssh/id_rsa
+    owner=robot group=robot mode=0600
+  tags:
+    - setup:user:robot
+
+- name: add /home/robot/.ssh/github.rsa
+  template: >
+    src=dot-ssh-github.rsa.j2
+    dest=/home/robot/.ssh/github.rsa
+    owner=robot group=robot mode=0600
+  tags:
+    - setup:user:robot
+
+- name: add /home/robot/.ssh/bitbucket.rsa
+  template: >
+    src=dot-ssh-bitbucket.rsa.j2
+    dest=/home/robot/.ssh/bitbucket.rsa
+    owner=robot group=robot mode=0600
+  tags:
+    - setup:user:robot
+
+- name: lock down /home/robot
+  file: path=/home/robot state=directory owner=robot group=robot mode=0700

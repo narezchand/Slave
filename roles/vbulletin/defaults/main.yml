@@ -1,0 +1,14 @@
+---
+# defaults vars - can apply to any OS
+## where should database error emails be sent?
+vbulletinTechnicalEmail: sysops@voceconnect.com
+
+## only used in production - the hostname of the database
+## master and the database slave
+vbulletinMasterHost: localhost
+vbulletinSlaveHost: localhost
+
+## which servers should vbulletin use for caching?
+## defaults to a single instance on localhost
+vbulletinMemcachedServers:
+  - 127.0.0.1:11211

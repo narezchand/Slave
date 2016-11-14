@@ -1,0 +1,4 @@
+# pin all packages from mariadb to a higher priority...
+Package: *
+Pin: origin ftp.osuosl.org
+Pin-Priority: 1000

@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: Sean O'Shaughnessy
+  description: Sets up a webgrind instance for analyzing XDebug profiling output
+  license: MIT
+  min_ansible_version: 1.2
+  platforms:
+    - name: Ubuntu
+      versions:
+        - precise
+    - name: Debian
+      versions:
+        - wheezy
+  categories:
+    - web

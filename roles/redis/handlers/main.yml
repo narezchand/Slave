@@ -1,0 +1,5 @@
+---
+- name: restart redis instances
+  supervisorctl: >
+    name=redis:* state=restarted
+  ignore_errors: True

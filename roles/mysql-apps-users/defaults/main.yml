@@ -1,0 +1,13 @@
+---
+# default vars - can apply to any OS
+
+# users that should be added to mysql, need a username
+# and password. should be aliased to setup role's setupUsers
+mysqlAppsUsers: []
+
+# which users of the system to enable mysql access for
+# should correspond to setup role's setupUsersEnabled
+mysqlAppsUsersEnabled: []
+
+# default password for _slave replication user
+mysqlAppsUsersReplicationPassword: ""

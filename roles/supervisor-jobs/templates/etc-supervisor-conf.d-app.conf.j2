@@ -1,0 +1,10 @@
+[program:{{ item.name }}]
+user=www-data
+directory={{ item.directory }}
+environment={{ item.environment }}
+command={{ item.command }}
+priority=999
+autostart=true
+stopsignal=QUIT
+stderr_logfile=/var/log/supervisor/%(program_name)s-error.log
+stdout_logfile=/var/log/supervisor/%(program_name)s.log

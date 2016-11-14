@@ -1,0 +1,12 @@
+## {{ ansible_managed }}
+{% if nginxUpstreams %}
+upstream web_servers {
+  least_conn;
+
+{% for server in nginxUpstreams %}
+  server {{ server }} fail_timeout=3s;
+{% endfor %}
+
+  keepalive 128;
+}
+{% endif %}

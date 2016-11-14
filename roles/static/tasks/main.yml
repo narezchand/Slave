@@ -1,0 +1,25 @@
+---
+- name: create /opt/tools/static support directory
+  file: >
+    path=/opt/tools/static state=directory
+    owner=root group=root mode=0755
+
+- name: copy fix permissions script to /opt/tools/static
+  copy: >
+    src=opt-tools-static-fix-permissions
+    dest=/opt/tools/static/fix-permissions
+    owner=root group=sudo mode=0770
+  tags:
+    - client:provision
+
+- name: execute fix permissions script in /opt/tools/static
+  shell: >
+    chdir=/opt/tools/static
+    ./fix-permissions {{ item.name }}
+  with_items: applications
+  when: >
+    executeFixPermissions and
+    item.instance and
+    item.type == "static"
+  tags:
+    - client:provision

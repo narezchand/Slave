@@ -1,0 +1,3 @@
+---
+# pull s3cmd from backports, it has a newer version
+backupsS3cmdTarget: "precise-backports"

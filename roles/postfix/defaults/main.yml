@@ -1,0 +1,21 @@
+---
+# where should mail for the system 'root' user go?
+postfixRootEmail: ""
+
+# settings hash for postfix configuration values
+postfixSettings: {}
+# example:
+#  header_size_limit: 4096000
+#  relayhost: "[smtp.mandrillapp.com]:587"
+#  smtp_sasl_auth_enable: "yes"
+#  smtp_sasl_password_maps: "static:YOUR_MANDRILL_USERNAME:YOUR_MANDRILL_KEY"
+#  smtp_sasl_security_options: noanonymous
+#  smtp_sender_dependent_authentication: "yes"
+#  smtp_tls_security_level: may
+#  smtp_tls_session_cache_database: "btree:${data_directory}/smtp_scache"
+#  smtpd_tls_session_cache_database: "btree:${data_directory}/smtpd_scache"
+
+# messages sent to these addresses should be silently discarded on the server
+postfixNullRoutes: []
+# example:
+#  - no-outbound-to-this-address@whatever.com

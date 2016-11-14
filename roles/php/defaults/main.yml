@@ -1,0 +1,113 @@
+---
+# default vars - can apply to any OS
+
+# where to install php packages from
+# choices: http://packages.dotdeb.org/dists/
+phpPackageSources:
+  - wheezy-php56
+  - wheezy
+
+# what php packages to install
+phpInstallPackages:
+  - php5-cli
+  - php5-common
+  - php5-curl
+  - php5-dev
+  - php5-gd
+  - php5-mcrypt
+  - php5-memcache
+  - php5-memcached
+  - php5-mysqlnd
+  - php5-xdebug
+
+# install PHP-FPM and configurations by default
+phpFPMEnabled: true
+
+## which php modules to enable for cli
+phpCLIModsEnabled:
+  -
+    mod: mysqlnd
+    priority: "10"
+  -
+    mod: pdo
+    priority: "10"
+  -
+    mod: curl
+  -
+    mod: gd
+  -
+    mod: mcrypt
+  -
+    mod: memcache
+  -
+    mod: memcached
+  -
+    mod: mysqli
+  -
+    mod: mysql
+  -
+    mod: pdo_mysql
+  -
+    mod: readline
+
+# which modules should be disabled for PHP (cli)
+phpCLIModsDisabled:
+  -
+    mod: opcache
+    priority: "05"
+  -
+    mod: xdebug
+
+# which modules should be enabled for PHP (fpm)
+phpFPMModsEnabled:
+  -
+    mod: opcache
+    priority: "05"
+  -
+    mod: mysqlnd
+    priority: "10"
+  -
+    mod: pdo
+    priority: "10"
+  -
+    mod: curl
+  -
+    mod: gd
+  -
+    mod: mcrypt
+  -
+    mod: memcache
+  -
+    mod: memcached
+  -
+    mod: mysqli
+  -
+    mod: mysql
+  -
+    mod: pdo_mysql
+
+# which modules should be disabled for PHP (fpm)
+phpFPMModsDisabled:
+  -
+    mod: readline
+  -
+    mod: xdebug
+
+# the new relic license key
+phpNewRelicLicenseKey: ""
+
+# where are php shared object modules located
+phpModulePath: /usr/lib/php5/20121212
+
+# array of packages to install from pear/pecl
+# example:
+#  -
+#    channel: "pear.phpunit.de"
+#    package: "PHPUnit"
+phpPearPackages: []
+phpPeclPackages: []
+
+# array of servers used for memcached session storage
+# defaults to 127.0.0.1:11211
+phpMemcachedServers:
+  - 127.0.0.1:11211

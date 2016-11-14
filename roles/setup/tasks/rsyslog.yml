@@ -1,0 +1,33 @@
+---
+- name: add /etc/rsyslog.conf
+  template: >
+    src=etc-rsyslog.conf.j2
+    dest=/etc/rsyslog.conf
+    owner=root group=root mode=0644
+  notify: rsyslog restart
+  tags:
+    - setup:rsyslog
+
+- name: remove /etc/rsyslog.d files
+  file: path=/etc/rsyslog.d/{{ item }} state=absent
+  with_items:
+    - 20-ufw.conf
+    - 50-default.conf
+    - postfix.conf
+  notify: rsyslog restart
+  tags:
+    - setup:rsyslog
+
+- name: add /etc/rsyslog.d/99-destination.conf
+  template: >
+    src=etc-rsyslog.d-99-destination.conf.j2
+    dest=/etc/rsyslog.d/99-destination.conf
+    owner=root group=root mode=0644
+  notify: rsyslog restart
+  tags:
+    - setup:rsyslog
+
+- name: start rsyslog
+  service: name=rsyslog state=started enabled=yes
+  tags:
+    - setup:rsyslog

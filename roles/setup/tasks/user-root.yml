@@ -1,0 +1,57 @@
+---
+- name: ensure directory /root
+  file: path=/root state=directory owner=root group=root mode=0700
+  tags:
+    - setup:user:root
+
+- name: ensure directory /root/.ssh
+  file: path=/root/.ssh state=directory owner=root group=root mode=0700
+  tags:
+    - setup:user:root
+
+- name: add /root/.gitconfig
+  copy: >
+    src=dot-gitconfig
+    dest=/root/.gitconfig
+    owner=root group=root mode=0644
+  tags:
+    - setup:user:root
+
+- name: add /root/.ssh/config
+  copy: >
+    src=dot-ssh-config
+    dest=/root/.ssh/config
+    owner=root group=root mode=0600
+  tags:
+    - setup:user:root
+
+- name: add authorized_key for root
+  authorized_key: >
+    user=root
+    key="{{ setupSSHRootAuthorizedKey }}"
+  tags:
+    - setup:user:root
+
+- name: add /root/.ssh/id_rsa
+  template: >
+    src=root-.ssh-id_rsa.j2
+    dest=/root/.ssh/id_rsa
+    owner=root group=root mode=0400
+  tags:
+    - setup:user:root
+
+- name: add /root/.ssh/github.rsa
+  template: >
+    src=dot-ssh-github.rsa.j2
+    dest=/root/.ssh/github.rsa
+    owner=root group=root mode=0400
+  tags:
+    - setup:user:root
+
+- name: add /root/.ssh/bitbucket.rsa
+  template: >
+    src=dot-ssh-bitbucket.rsa.j2
+    dest=/root/.ssh/bitbucket.rsa
+    owner=root group=root mode=0400
+  tags:
+    - setup:user:root

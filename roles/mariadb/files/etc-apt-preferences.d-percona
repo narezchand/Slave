@@ -1,0 +1,9 @@
+# pin all packages from percona to a lower priority...
+Package: *
+Pin: release o=Percona Development Team
+Pin-Priority: 400
+
+# except toolkit
+Package: percona-toolkit
+Pin: release o=Percona Development Team
+Pin-Priority: 600

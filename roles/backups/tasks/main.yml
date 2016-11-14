@@ -1,0 +1,42 @@
+---
+- name: retrieve OS specific variables
+  include_vars: "{{ ansible_distribution }}.yml"
+
+- name: install duplicity packages
+  apt: >
+    pkg={{ item }} state=installed update_cache=yes cache_valid_time=86400
+  with_items:
+    - duplicity
+    - python-boto
+    - python-magic
+
+- name: install s3cmd package
+  apt: >
+    pkg=s3cmd state=installed default_release={{ backupsS3cmdTarget }}
+
+- name: add /root/.s3cfg
+  template: >
+    src=root-.s3cfg.j2
+    dest=/root/.s3cfg
+    owner=root group=root mode=0600
+
+- name: add /usr/local/sbin/duplicity-backup
+  copy: >
+    src=usr-local-sbin-duplicity-backup
+    dest=/usr/local/sbin/duplicity-backup
+    owner=root group=root mode=0755
+
+- name: ensure directory /opt/backups
+  file: path=/opt/backups state=directory owner=root group=root mode=0750
+
+- name: add /opt/backups/duplicity-backup.conf
+  template: >
+    src=opt-backups-duplicity-backup.conf.j2
+    dest=/opt/backups/duplicity-backup.conf
+    owner=root group=root mode=0600
+
+- name: add /etc/cron.daily/backups
+  copy: >
+    src=etc-cron.daily-backups
+    dest=/etc/cron.daily/backups
+    owner=root group=root mode=0755

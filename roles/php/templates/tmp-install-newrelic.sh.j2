@@ -1,0 +1,15 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+set -e
+
+file=$0
+trap "rm /tmp/$file; exit" 0 1 2 3 15
+
+if [ -x -x /etc/init.d/newrelic-daemon ]; then
+  exit 0
+fi
+
+export NR_INSTALL_SILENT=1
+export NR_INSTAL_KEY={{ phpNewRelicLicenseKey }}
+/usr/bin/newrelic-install install

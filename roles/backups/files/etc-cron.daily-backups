@@ -1,0 +1,3 @@
+#!/bin/bash
+test -x /usr/local/sbin/duplicity-backup && \
+  /usr/local/sbin/duplicity-backup -c /opt/backups/duplicity-backup.conf -b

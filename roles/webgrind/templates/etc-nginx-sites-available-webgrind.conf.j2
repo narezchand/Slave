@@ -1,0 +1,77 @@
+## BEGIN server
+server {
+  set $_application "webgrind";
+  set $_output_cache 1;
+
+  listen {{ nginxListenPort }};
+  server_name webgrind.voceconnect.dev;
+
+  ## set document root and index types
+  root /var/www/webgrind/htdocs/current;
+  index index.php index.html index.htm;
+
+  ## logs
+  access_log /var/log/nginx/webgrind/access.log piped;
+  error_log /var/log/nginx/webgrind/error.log;
+
+  ## debug log
+  ## uncomment the below and comment out the above error_log for debugging
+  # error_log /var/log/nginx/webgrind/debug.log debug;
+
+  ## fpm ping and status
+  include /etc/nginx/conf.d/fpm-ping-status;
+
+  ## error page settings
+  include /etc/nginx/conf.d/error-pages;
+
+  ## favicon - try for file or send empty_gif
+  include /etc/nginx/conf.d/favicon;
+
+  ## static assets on disk
+  location ~* ^.+\.(?:{{ nginxStaticExtensions }})$ {
+    if_modified_since   before;
+    try_files           $uri =404;
+  }
+
+  ## main location
+  location / {
+    try_files $uri $uri/ /index.php?$args;
+  }
+
+  ## php backend location
+  location ~ \.php {
+    fastcgi_split_path_info ^((?U).*\.php)(.*)$;
+
+    # save our path info before trying the file http://trac.nginx.org/nginx/ticket/321
+    set $path_info $fastcgi_path_info;
+
+    # make sure file is real otherwise hand it off to webgrind
+    try_files $fastcgi_script_name @webgrind;
+
+    # set ENV vars for PHP
+    include         /etc/nginx/fastcgi_params;
+    fastcgi_param   SCRIPT_FILENAME     $document_root$fastcgi_script_name;
+    fastcgi_param   SCRIPT_NAME         $fastcgi_script_name;
+    fastcgi_param   PATH_INFO           $path_info if_not_empty;
+
+    # send to PHP-FPM
+    fastcgi_pass    unix:/var/www/$_application/tmp/php5-fpm.sock;
+    break;
+  }
+
+  ## named location blocks
+  include /etc/nginx/conf.d/block-empty;
+
+  ## webgrind index.php block
+  location @webgrind {
+    # set ENV vars for PHP
+    include         /etc/nginx/fastcgi_params;
+    fastcgi_param   SCRIPT_FILENAME     $document_root/index.php;
+    fastcgi_param   SCRIPT_NAME         /index.php;
+
+    # send to PHP-FPM
+    fastcgi_pass    unix:/var/www/$_application/tmp/php5-fpm.sock;
+    break;
+  }
+}
+## END server

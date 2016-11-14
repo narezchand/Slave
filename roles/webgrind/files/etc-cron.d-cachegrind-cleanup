@@ -1,0 +1,4 @@
+# /etc/cron.d/cachegrind-cleanup: crontab fragment for php5
+#  This purges cachegrind files older than 2 hours from /tmp
+
+19,49 *     * * *     root   find /tmp -name "cachegrind.out.*" -type f -mmin +120 -delete

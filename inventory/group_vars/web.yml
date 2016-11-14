@@ -1,0 +1,9 @@
+---
+nginxBadBots:
+  - 'libwww-perl'
+  - '(httrack|htmlparser|libwww)'
+  - '(FrontPage|Java.*|Microsoft.URL|MSFrontPage|Offline.Explorer|[Ww]eb[Bb]andit|Zeus|twiceler)'
+  - '(MJ12bot|casper|cmsworldmap|diavol|dotbot|flicky|ia_archiver|jakarta|kmccrew|planetwork|pycurl|skygrid)'
+
+## regexp of file extensions considered as "static" resources
+nginxStaticExtensions: "ai|asf|asx|atom|avi|bin|bmp|bz2|cco|crt|css|deb|der|dll|dmg|doc|docx|ear|eot|eps|exe|flv|gif|gz|gzip|hqx|htc|htm|html|ico|img|iso|jad|jar|jardiff|jng|jnlp|jpeg|jpg|js|json|kar|kml|kmz|m3u8|m4a|m4v|mid|midi|mml|mng|mov|mp3|mp4|mpeg|mpg|msi|msm|msp|ogg|otf|pdb|pdf|pem|pl|pm|png|ppt|pptx|prc|ps|ra|rar|rpm|rss|rtf|run|sea|shtml|sit|svg|svgz|swf|tcl|tgz|tif|tiff|tk|ts|ttf|txt|war|wav|wbmp|webm|webp|wml|wmlc|wmv|woff|xhtml|xls|xlsx|xml|xpi|xspf|zip|3gp|3gpp|7z"

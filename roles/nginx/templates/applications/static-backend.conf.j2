@@ -1,0 +1,219 @@
+#jinja2:lstrip_blocks: True
+{#
+  nginx static template for a backend instance of nginx
+  assumes an upstream load balancer that terminates SSL traffic,
+  sets the correct IP address via real_ip_header, and adds the
+  $http_x_forwarded_proto header set to "https" or "http"
+#}
+{% if item.instance.domainRedirects is defined and item.instance.domainRedirects|count > 0 %}
+## redirect server block
+  {% for _redirect in item.instance.domainRedirects %}
+server {
+  listen {{ nginxListenPort }};
+  server_name {{ _redirect.src }};
+  return 301 $scheme://{{ _redirect.dest }}$request_uri;
+}
+  {% endfor %}
+{% endif %}
+
+## BEGIN server
+server {
+  set $_application "{{ item.name }}";
+  set $_output_cache {{ 0 if item.instance.outputCache else 1 }};
+
+  listen {{ nginxListenPort }};
+
+  server_name {{ item.instance.primaryDomain }}{% for _domain in item.instance.domains %} {{ _domain }}{% endfor %};
+
+  ## set document root and index types
+{% if item.instance.documentRoot is defined %}
+  root /var/www/{{ item.name }}/htdocs/current{{ item.instance.documentRoot }};
+{% else %}
+  root /var/www/{{ item.name }}/htdocs/current;
+{% endif %}
+  index index.html index.htm;
+
+  ## logs
+  access_log /var/log/nginx/{{ item.name }}/access.log piped;
+  error_log /var/log/nginx/{{ item.name }}/error.log;
+
+  ## debug log
+  ## uncomment the below and comment out the above error_log for debugging
+  #error_log /var/log/nginx/{{ item.name }}/debug.log debug;
+
+  ## maximum upload size
+  client_max_body_size         {{ item.instance.maxUploadSize|default(25) }}m;
+
+{% if item.instance.nginxRequestLimits|default(true) %}
+  ## connections per IP/requests per second per IP limits
+  include /etc/nginx/conf.d/limits;
+{% endif %}
+
+  ## known 404, 405, and 444's
+  include /etc/nginx/conf.d/rejected-requests;
+
+  ## if forwarded proto not set, set to http
+  if ($http_x_forwarded_proto = '') {
+    set $http_x_forwarded_proto 'http';
+  }
+
+  ## maintenance page
+  include /etc/nginx/conf.d/maintenance;
+
+  ## error page settings
+  include /etc/nginx/conf.d/error-pages;
+
+{% if item.instance.htpasswdFullSite|default(false) %}
+  ## password protect full site
+  include /etc/nginx/conf.d/password-protect;
+{% endif %}
+
+  ## rewrites
+{% if item.instance.uriRedirects is defined and item.instance.uriRedirects|count > 0 %}
+  if (${{ item.name|replace("-", "_") }}_redirect) {
+    return 301 ${{ item.name|replace("-", "_") }}_redirect;
+  }
+{% endif %}
+
+{% if item.instance.nginxLocationBlocks|default(false) %}
+  ## application specific location blocks
+{{ item.instance.nginxLocationBlocks }}
+{% endif %}
+
+  ## favicon - try for file or send empty_gif
+  include /etc/nginx/conf.d/favicon;
+
+  ## robots block - checks for physical file before trying backend
+{% if item.instance.cdnEnabled|default(false) %}
+  include /etc/nginx/conf.d/robots-txt-cdn;
+{% else %}
+  include /etc/nginx/conf.d/robots-txt;
+{% endif %}
+
+  ## static assets on disk
+  location ~* ^.+\.(?:{{ nginxStaticExtensions }})$ {
+    if_modified_since   before;
+
+    location ~* \.(eot|ttf|woff|css|js|html|gif)$ {
+      more_set_headers 'Access-Control-Allow-Origin: *';
+    }
+
+    location ~* \.(css|js)$ {
+      more_set_headers 'Vary: Accept-Encoding';
+    }
+
+{% if stage != 'production' and item.instance.assetsMapping|count > 0 and nginxAssetsMappingEnabled %}
+    ## if file doesnt exist on disk locally, attempt to serve it from production
+    try_files $uri @mapped_assets;
+{% else %}
+    try_files $uri =404;
+{% endif %}
+  }
+
+  ## main location
+  location / {
+    ## if CDN enabled, block requests for non-static items to prevent
+    ## firewall from blocking malicious traffic sent through the CDN
+    if ($request_is_from_netdna_cdn) {
+      return 403;
+    }
+
+{% if item.instance.ssl is defined and item.instance.ssl|count > 0 %}
+    ## preferred protocol map redirect
+    if (${{ item.name|replace("-", "_") }}_prefer_proto != $http_x_forwarded_proto) {
+      return 301 ${{ item.name|replace("-", "_") }}_prefer_proto://$host$request_uri;
+    }
+{% endif %}
+
+    # serve up real files or send to WP
+    try_files $uri $uri.html $uri/ /index.html =404;
+  }
+
+  ## named location blocks
+  include /etc/nginx/conf.d/block-empty;
+
+{% if stage != 'production' and item.instance.assetsMapping|count > 0 and nginxAssetsMappingEnabled %}
+  ## production asset map
+  location @mapped_assets {
+    internal;
+
+    ## need to tell nginx how to resolve the URL...
+    resolver 8.8.8.8;
+    resolver_timeout 2s;
+
+    ## get upstream domain based on assetsMapping var
+    set $upstream_domain '';
+{% for assetMap in item.instance.assetsMapping %}
+    if ($http_host = "{{ assetMap.src }}") {
+      set $upstream_domain '{{ assetMap.dest }}';
+  {% if assetMap.path is defined %}
+      rewrite ^(.+)$ {{ assetMap.path }}$1 break;
+  {% endif %}
+    }
+{% endfor %}
+
+    ## hide specific headers from going upstream
+    proxy_hide_header Cookie;
+    proxy_hide_header Authorization;
+
+    ## set specific headers to upstream request
+    proxy_set_header Connection keep-alive;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header Host $upstream_domain;
+
+    ## always cache responses on this server to avoid
+    ## repeated upstream requests
+    proxy_cache_key    "$request_method:$scheme:$host$request_uri$args";
+    proxy_cache        mapped_assets;
+    proxy_cache_bypass 0;
+    proxy_no_cache     0;
+
+    ## max size, if larger - just stream the asset
+    proxy_max_temp_file_size  2m;
+
+    ## how to cache various responses
+    proxy_cache_valid     200 301 1h;
+    proxy_cache_valid     302 307 404 1m;
+
+    ## set headers for add'l info
+    more_set_headers      -s '200 301' 'X-Asset-Mapped: 1';
+    more_set_headers      -s '200 301' "X-Asset-Mapped-Cache: $upstream_cache_status";
+
+    ## proxy the request
+    proxy_pass http://$upstream_domain;
+  }
+{% endif %}
+
+}
+## END server
+
+{#
+  TODO: the ssl and uri redirect maps could possibly be
+  collapsed into one map.
+#}
+{% if item.instance.ssl is defined and item.instance.ssl|count > 0 %}
+## BEGIN SSL map
+map $host$uri ${{ item.name|replace("-", "_") }}_prefer_proto {
+  default "http";
+
+  {% for server in item.instance.ssl %}
+    {% if server.forceSSLuris is defined and server.forceSSLuris|count > 0 %}
+  ## additional hosts and uris to force ssl on
+      {% for ssl_uri in server.forceSSLuris %}
+  ~*{{ ssl_uri }}  "https";
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+}
+## END SSL map
+{% endif %}
+
+{% if item.instance.uriRedirects is defined and item.instance.uriRedirects|count > 0 %}
+## BEGIN 301 map
+map $host$uri ${{ item.name|replace("-", "_") }}_redirect {
+  {% for redirect in item.instance.uriRedirects %}
+  ~*{{ redirect.domainName }}{{ redirect.src }} "{{ redirect.dest }}";
+  {% endfor %}
+}
+## END 301 map
+{% endif %}
